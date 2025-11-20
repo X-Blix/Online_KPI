@@ -5,11 +5,15 @@
   <div class="medium-9 columns">
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title">{{ _('Submit to Judge') }}</h1>
+        <h1 class="section__title">📊 绩效填报</h1>
       </div>
       <div class="section__body typo" name="submit_section">
         <form method="post" enctype="multipart/form-data">
-          <div class="hasjs--hide">
+          <!-- 手动添加CSRF令牌 -->
+          <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+          
+          <!-- 隐藏代码语言选择（保留但隐藏） -->
+          <div class="hasjs--hide" style="display: none;">
             {{ form.form_select({
                 label:'Code language',
                 options:langRange,
@@ -17,16 +21,64 @@
                 value:handler.user.codeLang
               }) }}
           </div>
-          <div class="row nojs--hide" id="codelang-selector"></div>
-          {{ form.form_textarea({label:'Code', columns:12, name:'code', extra_class:'monospace', autofocus:true, nospellcheck:true}) }}
+          <div class="row nojs--hide" id="codelang-selector" style="display: none;"></div>
+          
+          <!-- 绩效填报区域 -->
           <div class="row">
-            <div class="medium-12 columns">
-              <p>{{ _('Or upload a file:') }} <input type="file" name="file"></p>
-              <br />
+            <div class="medium-6 columns">
+              <label style="font-weight: bold; color: #555;">
+                完成数值
+                <input type="number" name="filledValue" placeholder="请输入实际完成数值" class="textbox" style="margin-top: 8px; background: white;" autofocus>
+              </label>
+              <p class="help-text">请根据KPI指标要求填写实际完成值</p>
+            </div>
+            <div class="medium-6 columns">
+              <label style="font-weight: bold; color: #555;">
+                目标参考值
+                <input type="text" class="textbox" style="margin-top: 8px; background: #f5f5f5;" value="{{ pdoc.targetValue|default('') }} {{ pdoc.unit|default('') }}" disabled>
+              </label>
+              <p class="help-text">系统预设目标值</p>
             </div>
           </div>
+
+          <!-- 完成情况说明 -->
+          <div style="margin-top: 15px;">
+            <label style="font-weight: bold; color: #555;">
+              完成情况说明
+              <textarea name="filledText" placeholder="请详细描述完成情况、工作亮点、遇到的困难等..." class="textbox" style="height: 120px; margin-top: 8px; background: white;"></textarea>
+            </label>
+          </div>
+
+          <!-- 隐藏但保留代码字段（后端需要） -->
+          <div style="display: none;">
+            {{ form.form_textarea({label:'Code', columns:12, name:'code', extra_class:'monospace', nospellcheck:true}) }}
+            <textarea name="code" style="display: none;"></textarea>
+          </div>
+
+          {# 暂时查看效果
+            <div style="display: none;">
+              <!-- 把绩效数据合并到code字段中，让后端保存 -->
+              <textarea name="code" style="display: none;">
+            绩效填报数据：
+            完成数值: <filledValue>
+            完成说明: <filledText>
+              </textarea>
+            </div> #}
+
+          <!-- 证明材料上传 -->
+          <div class="row" style="margin-top: 15px;">
+            <div class="medium-12 columns">
+              <label style="font-weight: bold; color: #555;">
+                证明材料
+                <input type="file" name="file" style="margin-top: 8px;">
+              </label>
+              <p class="help-text">可上传完成情况的截图、文档、报表等证明材料</p>
+            </div>
+          </div>
+
+          <!-- 提交按钮 -->
           <div class="row"><div class="columns">
-            <input type="submit" class="rounded primary button" value="{{ _('Submit') }}">
+            <input type="submit" class="rounded primary button" value="📤 提交绩效">
           </div></div>
         </form>
       </div>
@@ -37,4 +89,12 @@
   </div>
 </div>
 
+<style>
+/* 隐藏代码相关元素 */
+#codelang-selector,
+.textarea[name="code"],
+.monospace {
+  display: none !important;
+}
+</style>
 {% endblock %}
