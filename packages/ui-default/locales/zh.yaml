@@ -153,8 +153,8 @@ Calendar: '日历'
 Can be Extended For: '可延期'
 Cancel Score: '取消成绩'
 Cancel: '取消'
-Categories: '分类'
-Category: '分类'
+Categories: '部门分类'
+Category: '部门分类'
 Change Email: '修改电子邮件'
 Change Password: '修改密码'
 Change Theme: '切换主题'
@@ -221,7 +221,7 @@ Copy Email: '复制电子邮件'
 Copy from: '复制自'
 Copy Link: '复制链接'
 Copy QQ Number: '复制QQ号'
-Copy Selected: '复制选中'
+Copy Selected: '复制选中指标'
 Copy WeChat Account: '复制微信号'
 Copy: '复制'
 Copyright Complaint: '版权申诉'
@@ -333,7 +333,7 @@ Don't show again: '不再显示'
 Done: '已结束'
 Download All: '下载全部'
 Download Dataset: '下载数据集'
-Download Selected: '下载选中'
+Download Selected: '导出选中指标'
 Download: '下载'
 Downvote: '差评'
 Duration (hours): '持续时间 (小时)'
@@ -775,7 +775,7 @@ Related: 相关
 Remember me: 记住我
 Remove Selected Group: 移除所选小组
 Remove Selected User: 将所选员工移出
-Remove Selected: 移除选中
+Remove Selected: 删除选中指标
 Remove this data: 移除这组数据
 Remove: 移除
 Rename Selected: 重命名选中
@@ -1108,3 +1108,7 @@ Your browser does not support WebAuthn or you are not in secure context.: 您的
 Your Device: 你的设备
 Your permission: 您的权限
 Your role: 您的角色
+Enter Edit Mode: 进入编辑模式 
+Leave Edit Mode: 退出编辑模式
+Hide Selected: 停用选中指标
+Unhide Selected: 启用选中指标
