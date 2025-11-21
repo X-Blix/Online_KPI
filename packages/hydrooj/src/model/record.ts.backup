@@ -27,8 +27,6 @@ export default class RecordModel { // 核心类
         'uid', 'pid', 'rejudged', 'progress', 'domainId',
         'contest', 'judger', 'judgeAt', 'status', 'source',
         'files', 'hackTarget',
-        // 添加绩效字段
-        'filledValue', 'filledText', 'kpiStatus', 'kpiScore', 'feedback', 'evidenceFiles',
     ];
 
     static STAT_QUERY = {
@@ -134,22 +132,15 @@ export default class RecordModel { // 核心类
     }
 
     static async add( // 创建新的提交记录
-    domainId: string, pid: number, uid: number,
-    lang: string, code: string, addTask: boolean,
-    args: {
-        contest?: ObjectId;
-        input?: string;
-        files?: Record<string, string>;
-        hackTarget?: ObjectId;
-        type: 'judge' | 'rejudge' | 'pretest' | 'hack' | 'generate';
-        // 添加绩效字段
-        filledValue?: number;
-        filledText?: string;
-        kpiStatus?: string;
-        kpiScore?: number;
-        feedback?: string;
-        evidenceFiles?: string[];
-    } = { type: 'judge' },
+        domainId: string, pid: number, uid: number,
+        lang: string, code: string, addTask: boolean,
+        args: {
+            contest?: ObjectId;
+            input?: string;
+            files?: Record<string, string>;
+            hackTarget?: ObjectId;
+            type: 'judge' | 'rejudge' | 'pretest' | 'hack' | 'generate';
+        } = { type: 'judge' },
     ) {
         const data: RecordDoc = {
             status: STATUS.STATUS_WAITING,
@@ -165,16 +156,9 @@ export default class RecordModel { // 核心类
             judgeTexts: [],
             compilerTexts: [],
             testCases: [],
-            rejudged: false,
             judger: null,
             judgeAt: null,
-            // 添加绩效字段
-            filledValue: args.filledValue,
-            filledText: args.filledText,
-            kpiStatus: args.kpiStatus || 'pending',
-            kpiScore: args.kpiScore,
-            feedback: args.feedback,
-            evidenceFiles: args.evidenceFiles || [],
+            rejudged: false,
         };
         let isContest = !!args.contest;
         if (args.contest) data.contest = args.contest;

@@ -86,7 +86,7 @@ export interface QueryContext {
     fail: boolean;
     hint: string;
 }
-
+// 题目列表和搜索
 export class ProblemMainHandler extends Handler {
     queryContext: QueryContext = {
         query: {},
@@ -275,7 +275,7 @@ export class ProblemMainHandler extends Handler {
         this.back();
     }
 }
-
+// 随机题目 
 export class ProblemRandomHandler extends Handler {
     @param('q', Types.Content, true)
     async get(domainId: string, qs = '') {
@@ -291,7 +291,7 @@ export class ProblemRandomHandler extends Handler {
         this.response.redirect = this.url('problem_detail', { pid });
     }
 }
-
+// 题目详情
 export class ProblemDetailHandler extends ContestDetailBaseHandler {
     pdoc: ProblemDoc;
     udoc: User;
@@ -458,7 +458,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
         this.back({ star });
     }
 }
-
+// 题目提交
 export class ProblemSubmitHandler extends ProblemDetailHandler {
     @param('tid', Types.ObjectId, true)
     async prepare(domainId: string, tid?: ObjectId) {
@@ -523,39 +523,9 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
             code = code.replace(/\r\n/g, '\n');
             if (code.length > lengthLimit) throw new ValidationError('code');
         }
-        // const rid = await record.add(
-        //     domainId, this.pdoc.docId, this.user._id, lang, code, true,
-        //     pretest ? { input, type: 'pretest' } : { contest: tid, files, type: 'judge' },
-        // );
-        // 获取绩效数据
-        const filledValue = this.request.body.filledValue;
-        const filledText = this.request.body.filledText;
-
-        // 构建记录数据
-        const recordData: any = {
-            contest: tid,
-            files,
-            type: 'judge',
-        };
-
-        // 添加绩效数据
-        if (filledValue !== undefined || filledText) {
-            recordData.filledValue = filledValue ? Number.parseFloat(filledValue) : null;
-            recordData.filledText = filledText || '';
-            recordData.kpiStatus = 'pending';
-        }
-
         const rid = await record.add(
             domainId, this.pdoc.docId, this.user._id, lang, code, true,
-            pretest ? { input, type: 'pretest' } : { 
-                contest: tid,
-                files,
-                type: 'judge',
-                // 确保传递绩效字段
-                filledValue: filledValue ? Number.parseFloat(filledValue) : null,
-                filledText: filledText || '',
-                kpiStatus: 'pending',
-            },
+            pretest ? { input, type: 'pretest' } : { contest: tid, files, type: 'judge' },
         );
         if (!pretest) {
             await Promise.all([
@@ -573,7 +543,7 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
         }
     }
 }
-
+//hack功能 
 export class ProblemHackHandler extends ProblemDetailHandler {
     rdoc: RecordDoc;
 
@@ -633,13 +603,13 @@ export class ProblemHackHandler extends ProblemDetailHandler {
         this.response.redirect = this.url('record_detail', { rid });
     }
 }
-
+//题目管理 
 export class ProblemManageHandler extends ProblemDetailHandler {
     async prepare() {
         if (!this.user.own(this.pdoc, PERM.PERM_EDIT_PROBLEM_SELF)) this.checkPerm(PERM.PERM_EDIT_PROBLEM);
     }
 }
-
+//题目编辑
 export class ProblemEditHandler extends ProblemManageHandler {
     async get() {
         this.response.body.additional_file = sortFiles(this.pdoc.additional_file || []);
@@ -667,7 +637,7 @@ export class ProblemEditHandler extends ProblemManageHandler {
         this.response.redirect = this.url('problem_detail', { pid: newPid || pdoc.docId });
     }
 }
-
+//配置管理
 export class ProblemConfigHandler extends ProblemManageHandler {
     async get() {
         if (this.pdoc.reference) throw new ProblemIsReferencedError('edit config');
@@ -684,7 +654,7 @@ export class ProblemConfigHandler extends ProblemManageHandler {
         this.response.template = 'problem_config.html';
     }
 }
-
+//文件管理
 export class ProblemFilesHandler extends ProblemDetailHandler {
     notUsage = true;
 
@@ -855,7 +825,7 @@ export class ProblemFileDownloadHandler extends ProblemDetailHandler {
         );
     }
 }
-
+//题解系统
 export class ProblemSolutionHandler extends ProblemDetailHandler {
     @param('page', Types.PositiveInt, true)
     @param('tid', Types.ObjectId, true)
@@ -989,7 +959,7 @@ export class ProblemSolutionRawHandler extends ProblemDetailHandler {
         this.response.type = 'text/markdown';
     }
 }
-
+//统计信息
 export class ProblemStatisticsHandler extends ProblemDetailHandler {
     @param('sort', Types.Range(Object.keys(record.STAT_QUERY)), true)
     @param('direction', Types.Range([-1, 1]), true)
@@ -1015,7 +985,7 @@ export class ProblemStatisticsHandler extends ProblemDetailHandler {
         };
     }
 }
-
+//题目创建 
 export class ProblemCreateHandler extends Handler {
     async get() {
         this.response.template = 'problem_edit.html';

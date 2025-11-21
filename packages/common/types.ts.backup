@@ -117,15 +117,6 @@ export interface RecordPayload extends RecordJudgeInfo {
     contest?: string;
 
     files?: Record<string, string>;
-
-    // 添加绩效字段
-    filledValue?: number; // 完成数值
-    filledText?: string; // 完成说明
-    kpiStatus?: string; // 审核状态: pending/approved/rejected
-    kpiScore?: number; // 绩效得分
-    feedback?: string; // 主管反馈
-    evidenceFiles?: string[]; // 证明材料文件ID数组
-
 }
 // 发送给测评机的请求格式
 export interface JudgeRequest extends Omit<RecordPayload, 'testCases'> {

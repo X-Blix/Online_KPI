@@ -1,37 +1,38 @@
+// 这是一个权限文件
 export const PERM = {
     PERM_NONE: 0n,
 
-    // Domain Settings
-    PERM_VIEW: 1n << 0n,
-    PERM_EDIT_DOMAIN: 1n << 1n,
+    // 域设置权限
+    PERM_VIEW: 1n << 0n, // 查看域
+    PERM_EDIT_DOMAIN: 1n << 1n, // 编辑域设置
     /** @deprecated use PERM_VIEW_USER_PRIVATE_INFO instead */
     PERM_VIEW_DISPLAYNAME: 1n << 67n,
-    PERM_VIEW_USER_PRIVATE_INFO: 1n << 67n,
+    PERM_VIEW_USER_PRIVATE_INFO: 1n << 67n, // 查看用户私有信息
     PERM_MOD_BADGE: 1n << 2n,
 
-    // Problem
-    PERM_CREATE_PROBLEM: 1n << 4n,
-    PERM_EDIT_PROBLEM: 1n << 5n,
-    PERM_EDIT_PROBLEM_SELF: 1n << 6n,
+    // 题目相关权限
+    PERM_CREATE_PROBLEM: 1n << 4n, // 创建题目
+    PERM_EDIT_PROBLEM: 1n << 5n, // 编辑任意题目
+    PERM_EDIT_PROBLEM_SELF: 1n << 6n, // 编辑自己的题目
     PERM_VIEW_PROBLEM: 1n << 7n,
-    PERM_VIEW_PROBLEM_HIDDEN: 1n << 8n,
+    PERM_VIEW_PROBLEM_HIDDEN: 1n << 8n, // 查看隐藏题目
     PERM_SUBMIT_PROBLEM: 1n << 9n,
-    PERM_READ_PROBLEM_DATA: 1n << 10n,
+    PERM_READ_PROBLEM_DATA: 1n << 10n, // 读取题目测试数据
 
-    // Record
-    PERM_VIEW_RECORD: 1n << 70n,
-    PERM_READ_RECORD_CODE: 1n << 12n,
+    // 提交记录权限
+    PERM_VIEW_RECORD: 1n << 70n, // 查看提交记录
+    PERM_READ_RECORD_CODE: 1n << 12n, // 查看代码
     PERM_READ_RECORD_CODE_ACCEPT: 1n << 66n,
-    PERM_REJUDGE_PROBLEM: 1n << 13n,
+    PERM_REJUDGE_PROBLEM: 1n << 13n, // 重新评测题目
     PERM_REJUDGE: 1n << 14n,
 
-    // Problem Solution
-    PERM_VIEW_PROBLEM_SOLUTION: 1n << 15n,
+    // 题解系统权限
+    PERM_VIEW_PROBLEM_SOLUTION: 1n << 15n, // 查看题解
     PERM_VIEW_PROBLEM_SOLUTION_ACCEPT: 1n << 65n,
-    PERM_CREATE_PROBLEM_SOLUTION: 1n << 16n,
+    PERM_CREATE_PROBLEM_SOLUTION: 1n << 16n, // 创建题解
     PERM_VOTE_PROBLEM_SOLUTION: 1n << 17n,
     PERM_EDIT_PROBLEM_SOLUTION: 1n << 18n,
-    PERM_EDIT_PROBLEM_SOLUTION_SELF: 1n << 19n,
+    PERM_EDIT_PROBLEM_SOLUTION_SELF: 1n << 19n, // 编辑自己的题解
     PERM_DELETE_PROBLEM_SOLUTION: 1n << 20n,
     PERM_DELETE_PROBLEM_SOLUTION_SELF: 1n << 21n,
     PERM_REPLY_PROBLEM_SOLUTION: 1n << 22n,
@@ -39,35 +40,35 @@ export const PERM = {
     PERM_DELETE_PROBLEM_SOLUTION_REPLY: 1n << 25n,
     PERM_DELETE_PROBLEM_SOLUTION_REPLY_SELF: 1n << 26n,
 
-    // Discussion
+    // 讨论系统权限
     PERM_VIEW_DISCUSSION: 1n << 27n,
-    PERM_CREATE_DISCUSSION: 1n << 28n,
-    PERM_HIGHLIGHT_DISCUSSION: 1n << 29n,
+    PERM_CREATE_DISCUSSION: 1n << 28n, // 创建讨论
+    PERM_HIGHLIGHT_DISCUSSION: 1n << 29n, // 回复讨论
     PERM_PIN_DISCUSSION: 1n << 61n,
     PERM_EDIT_DISCUSSION: 1n << 30n,
     PERM_EDIT_DISCUSSION_SELF: 1n << 31n,
     PERM_DELETE_DISCUSSION: 1n << 32n,
     PERM_DELETE_DISCUSSION_SELF: 1n << 33n,
     PERM_REPLY_DISCUSSION: 1n << 34n,
-    PERM_ADD_REACTION: 1n << 62n,
+    PERM_ADD_REACTION: 1n << 62n, // 添加表情反应
     PERM_EDIT_DISCUSSION_REPLY_SELF: 1n << 36n,
     PERM_DELETE_DISCUSSION_REPLY: 1n << 38n,
     PERM_DELETE_DISCUSSION_REPLY_SELF: 1n << 39n,
     PERM_DELETE_DISCUSSION_REPLY_SELF_DISCUSSION: 1n << 40n,
     PERM_LOCK_DISCUSSION: 1n << 64n,
 
-    // Contest
-    PERM_VIEW_CONTEST: 1n << 41n,
+    // 比赛和作业权限
+    PERM_VIEW_CONTEST: 1n << 41n, // 查看比赛
     PERM_VIEW_CONTEST_SCOREBOARD: 1n << 42n,
     PERM_VIEW_CONTEST_HIDDEN_SCOREBOARD: 1n << 43n,
-    PERM_CREATE_CONTEST: 1n << 44n,
-    PERM_ATTEND_CONTEST: 1n << 45n,
+    PERM_CREATE_CONTEST: 1n << 44n, // 创建比赛
+    PERM_ATTEND_CONTEST: 1n << 45n, // 参加比赛
     PERM_EDIT_CONTEST: 1n << 50n,
     PERM_EDIT_CONTEST_SELF: 1n << 51n,
     PERM_VIEW_HIDDEN_CONTEST: 1n << 68n,
 
-    // Homework
-    PERM_VIEW_HOMEWORK: 1n << 52n,
+    // 作业权限
+    PERM_VIEW_HOMEWORK: 1n << 52n, // 查看作业
     PERM_VIEW_HOMEWORK_SCOREBOARD: 1n << 53n,
     PERM_VIEW_HOMEWORK_HIDDEN_SCOREBOARD: 1n << 54n,
     PERM_CREATE_HOMEWORK: 1n << 55n,
@@ -76,7 +77,7 @@ export const PERM = {
     PERM_EDIT_HOMEWORK_SELF: 1n << 58n,
     PERM_VIEW_HIDDEN_HOMEWORK: 1n << 69n,
 
-    // Training
+    // 训练权限
     PERM_VIEW_TRAINING: 1n << 46n,
     PERM_CREATE_TRAINING: 1n << 47n,
     PERM_EDIT_TRAINING: 1n << 48n,
