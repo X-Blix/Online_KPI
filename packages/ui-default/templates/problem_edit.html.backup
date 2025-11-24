@@ -1,22 +1,28 @@
-{% extends "layout/basic.html" %}
+<!-- 继承基础布局 -->
+{% extends "layout/basic.html" %}  
+<!-- 内容区块 -->
 {% block content %}
 <div class="row">
+  <!-- 左侧主内容区：9列宽度 -->
   <div class="medium-9 columns">
     <div class="section">
       <div class="section__body">
         <form method="post">
           <div class="row">
+            <!-- 表单部分：题目基本信息 -->
             <div class="medium-3 columns">
               <label>
                 {{ _('pid') }}
                 <br>
                 <label>
+                  <!-- 题目编号输入框 -->
                   <input name="pid" placeholder="P1000" value="{{ pdoc['pid']|default('') }}" class="textbox">
                 </label>
               </label>
             </div>
             <div class="medium-7 columns">
               <label>
+                <!-- 标题 -->
                 {{ _('Title') }}
                 <input name="title" placeholder="{{ _('title') }}" value="{{ pdoc['title']|default('') }}" class="textbox"{% if page_name == 'problem_create' %} autofocus{% endif %}>
               </label>
@@ -25,12 +31,14 @@
               <label>
                 <br>
                 <label class="checkbox">
+                  <!-- 隐藏选项 -->
                   <input type="checkbox" name="hidden" value="on"{% if pdoc['hidden'] %} checked{% endif %} class="checkbox">{{ _('Hidden') }}
                 </label>
               </label>
             </div>
           </div>
           <div class="row">
+            <!-- 标签：用逗号分隔标签输入 -->
           {{ form.form_text({
                row:false,
                columns:9,
@@ -39,6 +47,7 @@
                name:'tag',
                value:pdoc['tag']|default([])|join(', ')
              }) }}
+             <!-- 难度：1-10的难度等级 -->
           {{ form.form_text({
                row:false,
                columns:3,
@@ -48,25 +57,32 @@
                value:pdoc['difficulty'] or ''
              }) }}
           </div>
+          <!-- 多语言题目描述 -->
           <div class="section__tab-container nojs--hide">
           <div class="section__tab-header-wrapper">
             <ul class="section__tab-header">
+              <!-- 持多种语言的题目描述编辑 -->
               <li class="section__tab-header-item tab--active" data-lang="{{ _('__id') }}">{{ _('__langname') }}</li>
               {% for k, v in statementLangs %}{% if k != handler.user.viewLang %}
-                <li class="section__tab-header-item" data-lang="{{ k }}">{{ v }}</li>
+              <!-- 使用标签页切换不同语言版本  -->
+              <li class="section__tab-header-item" data-lang="{{ k }}">{{ v }}</li>
               {% endif %}{% endfor %}
             </ul>
           </div>
           </div>
+          <!-- 包含 Markdown 编辑器  -->
           <div><textarea data-editor{% if page_name == 'problem_edit' %} autofocus{% endif %} class="textbox auto-resize nojs--hide"></textarea></div>
           <textarea name="content" class="textbox hasjs--hide" data-markdown-upload style="height: 500px">{% if pdoc %}{{ pdoc['content']|toString }}{% else %}{% include 'partials/problem_default.md' %}{% endif %}</textarea>
           <div class="row"><div class="columns">
           {% if page_name == 'problem_edit' %}
+          <!-- 操作按钮 -->
             <button type="submit" class="rounded primary button">
-              {{ _('Update') }}
+              <!-- 更新、删除按钮 -->
+              {{ _('Update') }} 
             </button>
             {% if handler.user.own(pdoc, perm.PERM_EDIT_PROBLEM_SELF) or handler.user.hasPerm(perm.PERM_EDIT_PROBLEM) %}
-              <button name="operation" value="delete" type="submit" class="rounded button">
+            <!-- 创建页面:创建按钮   -->
+            <button name="operation" value="delete" type="submit" class="rounded button">
                 {{ _('Delete') }}
               </button>
             {% endif %}
@@ -80,9 +96,11 @@
       </div>
     </div>
   </div>
+  <!-- 右侧边栏（3列宽度） -->
   <div class="medium-3 columns">
     <div class="section side visiable nojs--hide section--problem-sidebar-tags">
       <div class="section__header">
+        <!-- 分类标签区域：显示可点击的分类标签 + 用于快速添加题目分类 -->
         <h1 class="section__title">{{ _('Categories') }} ({{ _('click to add') }})</h1>
       </div>
       <div class="section__body problem-sidebar-tags__detail">
@@ -90,10 +108,13 @@
       </div>
     </div>
     {% if page_name == 'problem_edit' %}
+    <!-- 附加文件管理：仅编辑页面 -->
       <div class="section side" data-type="additional_file" data-sidebar>
         <div class="section__header">
+          <!-- 已上传文件列表显示 -->
           <h1 class="section__title">{{_('Additional Files')}}</h1>
           <div class="section__tools">
+            <!-- 文件上传功能 -->
             <button class="primary rounded button" name="upload_file">{{ _('Upload') }}</button>
           </div>
         </div>

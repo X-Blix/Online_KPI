@@ -1,9 +1,14 @@
+{# 评测记录列表页面中的单行记录模板 ：在评测记录表格中显示每一条提交记录的基本信息#}
 {% import "components/record.html" as record with context %}
 {% import "components/user.html" as user with context %}
 {% import "components/problem.html" as problem with context %}
+{# 行数据属性 #}
 <tr data-rid="{{ rdoc['_id'] }}">
   {% set _isPretest = rdoc.contest and rdoc.contest.toString() == '000000000000000000000000' %}
+  {# 状态列:调用组件渲染评测状态（状态图标、分数、状态文本等） #}
   {{ record.render_status_td(rdoc, allDomain = allDomain) }}
+  {# 题目名称列（包含管理员操作 #}
+  {# 管理员：如果用户有重新评测的权限，不是Hack记录、不是预测试， 显示 “重新评测”“取消分数”按钮 #}
   <td class="col--problem col--problem-name">
   {% if handler.user.hasPerm(perm.PERM_REJUDGE) and not rdoc.files.hack and not _isPretest %}
     <form class="form--inline" method="post" action="{{ url('record_detail', rid=rdoc._id, domainId=rdoc.domainId) }}">
@@ -17,6 +22,11 @@
       </button> |
     </form>
   {% endif %}
+  {# 题目信息显示 ：
+      比赛中的题目：显示题目标题
+      普通题目：如果题目不隐藏或用户有权限，显示题目标题
+      无权限：显示 * 代替题目名称
+  #}
   {% if pdoc and rdoc.contest %}
     {{ problem.render_problem_title(pdoc, tdoc=tdoc, show_tags=false, show_invisible_flag=false) }}
   {% elif pdoc and (not pdoc.hidden or handler.user.hasPerm(perm.PERM_VIEW_PROBLEM_HIDDEN) or handler.user.own(pdoc)) %}
@@ -24,12 +34,17 @@
   {% else %}
     *
   {% endif %}
+  {# 特殊标记  Hack记录 + 预测试： 显示橙色标记 #}
   {% if rdoc.files.hack %}<span class="text-orange">({{ _('Hack') }})</span>{% endif %}
   {% if _isPretest %}<span class="text-orange">({{ _('Pretest') }})</span>{% endif %}
   </td>
+  {# 提交者 #}
   <td class="col--submit-by">{{ user.render_inline(udoc, avatar=false, badge=false) }}</td>
+  {# 时间消耗 #}
   <td class="col--time">{% if rdoc['time'] %}{% if [STATUS.STATUS_TIME_LIMIT_EXCEEDED, STATUS.STATUS_MEMORY_LIMIT_EXCEEDED, STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED].includes(rdoc['status']) %}&ge;{% endif %}{{ rdoc.time|round|int }}ms{% else %}-{% endif %}</td>
   <td class="col--memory">{% if rdoc['memory'] %}{% if [STATUS.STATUS_TIME_LIMIT_EXCEEDED, STATUS.STATUS_MEMORY_LIMIT_EXCEEDED, STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED].includes(rdoc['status']) %}&ge;{% endif %}{{ size(rdoc.memory, 1024) }}{% else %}-{% endif %}</td>
+  {# 提交语言 #}
   <td class="col--lang">{{ model.setting.langs[rdoc['lang']].display }}</td>
+  {# 提交时间 #}
   <td class="col--submit-at">{{ datetimeSpan(rdoc['_id'])|safe }}</td>
 </tr>

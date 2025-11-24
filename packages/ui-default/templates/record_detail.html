@@ -1,14 +1,19 @@
+{# 测评记录详情页面的主模板文件  #}
 {% import "components/problem.html" as problem with context %}
 {% extends "layout/basic.html" %}
 {% block content %}
 {% if typeof(rdoc['status']) === 'number' and not rev %}
+  {# 如果评测还在进行中且不是历史版本，建立WebSocket连接实时更新状态 #}
   {{ set(UiContext, 'socketUrl', "record-detail-conn?domainId=" + rdoc.domainId + "&rid=" + rdoc._id) }}
 {% endif %}
 <div class="row">
+  {# 左栏，显示主要信息 #}
   <div class="medium-9 columns collapsed">
+    {# 评测状态区域 #}
     {% if typeof(rdoc['status']) === 'number' %}
       {% include 'record_detail_status.html' %}
     {% endif %}
+    {# 代码显示区域 #}
     {% if rdoc['code'] or rdoc.files.code %}
     <div class="section">
       <div class="section__header">
@@ -21,16 +26,19 @@
         </div>
       </div>
       <div class="section__body">
+        {# 代码高亮 #}
         <pre class="line-numbers"><code class="language-{{ model.setting.langs[rdoc.lang].highlight }}">{{ rdoc['code'] }}</code></pre>
       </div>
     </div>
     {% endif %}
   </div>
+  {# 右栏，显示侧边栏信息 #}
   <div class="medium-3 columns">
     <div class="section side">
       <div class="section__header">
         <h1 class="section__title">{{ _('Information') }}</h1>
       </div>
+       {# 管理员操作菜单 #}
     {% if handler.user.hasPerm(perm.PERM_REJUDGE) and not rdoc.files.hack %}
       <div class="section__body no-padding">
         <ol class="menu">
@@ -51,6 +59,7 @@
         </ol>
       </div>
     {% endif %}
+    {# Hack功能菜单 #}
     {% if handler.user.hasPerm(perm.PERM_SUBMIT_PROBLEM) and pdoc.config.hackable and rdoc.status === STATUS.STATUS_ACCEPTED and rdoc.uid !== handler.user._id %}
       <div class="section__body no-padding">
         <ol class="menu">
@@ -101,11 +110,13 @@
             <dd>{{ user.render_inline(judge_udoc, badge=false) }}</dd>
           {% endif %}
         </dl>
+        {# 评测摘要 #}
         {% if typeof(rdoc['status']) === 'number' %}
           {% include 'record_detail_summary.html' %}
         {% endif %}
       </div>
     </div>
+    {# 历史版本 #}
     {% if allRevs|length %}
       <div class="section side">
         <div class="section__header">

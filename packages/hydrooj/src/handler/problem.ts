@@ -502,6 +502,9 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
         await this.limitRate('add_record', 60, system.get('limit.submission_user'), '{{user}}');
         await this.limitRate('add_record', 60, pretest ? system.get('limit.pretest') : system.get('limit.submission'));
         const files: Record<string, string> = {};
+        const evidenceFiles: string[] = []; // 新增：存储证明材料文件ID
+
+        // 现有的代码文件处理逻辑
         const lengthLimit = system.get('limit.codelength') || 128 * 1024;
         if (!code) {
             const file = this.request.files?.file;
@@ -523,31 +526,25 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
             code = code.replace(/\r\n/g, '\n');
             if (code.length > lengthLimit) throw new ValidationError('code');
         }
-        // const rid = await record.add(
-        //     domainId, this.pdoc.docId, this.user._id, lang, code, true,
-        //     pretest ? { input, type: 'pretest' } : { contest: tid, files, type: 'judge' },
-        // );
+
+        // 新增：处理证明材料文件
+        const evidenceFile = this.request.files?.evidenceFile; // 假设前端表单中文件字段名为 evidenceFile
+        if (evidenceFile && evidenceFile.size > 0) {
+            const sizeLimit = 10 * 1024 * 1024; // 10MB 限制
+            if (evidenceFile.size > sizeLimit) throw new FileTooLargeError('evidenceFile');
+
+            const evidenceFileId = nanoid();
+            await storage.put(`submission/${this.user._id}/${evidenceFileId}`, evidenceFile.filepath, this.user._id);
+            evidenceFiles.push(`${this.user._id}/${evidenceFileId}#${evidenceFile.originalFilename}`);
+        }
+
         // 获取绩效数据
         const filledValue = this.request.body.filledValue;
         const filledText = this.request.body.filledText;
 
-        // 构建记录数据
-        const recordData: any = {
-            contest: tid,
-            files,
-            type: 'judge',
-        };
-
-        // 添加绩效数据
-        if (filledValue !== undefined || filledText) {
-            recordData.filledValue = filledValue ? Number.parseFloat(filledValue) : null;
-            recordData.filledText = filledText || '';
-            recordData.kpiStatus = 'pending';
-        }
-
         const rid = await record.add(
             domainId, this.pdoc.docId, this.user._id, lang, code, true,
-            pretest ? { input, type: 'pretest' } : { 
+            pretest ? { input, type: 'pretest' } : {
                 contest: tid,
                 files,
                 type: 'judge',
@@ -555,8 +552,10 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
                 filledValue: filledValue ? Number.parseFloat(filledValue) : null,
                 filledText: filledText || '',
                 kpiStatus: 'pending',
+                evidenceFiles, // 修改为属性简写
             },
         );
+
         if (!pretest) {
             await Promise.all([
                 problem.inc(domainId, this.pdoc.docId, 'nSubmit', 1),
@@ -564,6 +563,7 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
                 tid && contest.updateStatus(domainId, tid, this.user._id, rid, this.pdoc.docId),
             ]);
         }
+
         if (tid && !pretest && !contest.canShowSelfRecord.call(this, this.tdoc)) {
             this.response.body = { tid };
             this.response.redirect = this.url(this.tdoc.rule === 'homework' ? 'homework_detail' : 'contest_problemlist', { tid });
@@ -572,8 +572,9 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
             this.response.redirect = this.url('record_detail', { rid });
         }
     }
-}
+} // 这里缺少了这个结束大括号
 
+// 添加缺失的 ProblemHackHandler 类
 export class ProblemHackHandler extends ProblemDetailHandler {
     rdoc: RecordDoc;
 
@@ -633,7 +634,6 @@ export class ProblemHackHandler extends ProblemDetailHandler {
         this.response.redirect = this.url('record_detail', { rid });
     }
 }
-
 export class ProblemManageHandler extends ProblemDetailHandler {
     async prepare() {
         if (!this.user.own(this.pdoc, PERM.PERM_EDIT_PROBLEM_SELF)) this.checkPerm(PERM.PERM_EDIT_PROBLEM);

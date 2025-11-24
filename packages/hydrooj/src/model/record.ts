@@ -134,8 +134,8 @@ export default class RecordModel { // 核心类
     }
 
     static async add( // 创建新的提交记录
-    domainId: string, pid: number, uid: number,
-    lang: string, code: string, addTask: boolean,
+        domainId: string, pid: number, uid: number,
+        lang: string, code: string, addTask: boolean,
     args: {
         contest?: ObjectId;
         input?: string;
@@ -350,7 +350,7 @@ export async function apply(ctx: Context) {
             { key: { domainId: 1, contest: 1, _id: -1 }, name: 'basic' }, // 基础查询（域+比赛+时间倒序）
             { key: { domainId: 1, contest: 1, uid: 1, _id: -1 }, name: 'withUser' }, // 用户相关的查询
             { key: { domainId: 1, contest: 1, pid: 1, _id: -1 }, name: 'withProblem' }, // 题目相关的查询
-            { key: { domainId: 1, contest: 1, pid: 1, uid: 1, _id: -1 }, name: 'withUserAndProblem' }, // 用户和题目组合查询 
+            { key: { domainId: 1, contest: 1, pid: 1, uid: 1, _id: -1 }, name: 'withUserAndProblem' }, // 用户和题目组合查询
             { key: { domainId: 1, contest: 1, status: 1, _id: -1 }, name: 'withStatus' }, // 按状态筛选
         ),
         db.ensureIndexes( // 统计集合索引
@@ -361,7 +361,7 @@ export async function apply(ctx: Context) {
             { key: { domainId: 1, pid: 1, uid: 1, length: 1 }, name: 'length' },
         ),
         db.ensureIndexes( // 历史记录集合索引
-            RecordModel.collHistory, // 按记录ID快速查询历史版本 
+            RecordModel.collHistory, // 按记录ID快速查询历史版本
             { key: { rid: 1, _id: -1 }, name: 'basic' },
         ),
     ]);

@@ -1,61 +1,66 @@
+{# 评测记录详情页面，显示用户提交代码后的评测结果 #}
 <div class="section visible" id="status" data-status="{{ rdoc.status }}">
   <div class="section__header">
+    {# 头部状态区域 #}
     <h1 class="section__title">
-      <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rdoc['status']] }}"></span>
+      <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rdoc['status']] }}"></span> {# 状态图标 #}
       {% if typeof(rdoc['score']) == 'number' %}
-      <span style="color: {{ utils.status.getScoreColor(rdoc.score|default(0)) }}">{{ rdoc.score|default(0) }}</span>
+      <span style="color: {{ utils.status.getScoreColor(rdoc.score|default(0)) }}">{{ rdoc.score|default(0) }}</span>   {#分数颜色#}
       {% endif %}
       <span class="record-status--text {{ model.builtin.STATUS_CODES[rdoc['status']] }}">
-        {{ model.builtin.STATUS_TEXTS[rdoc['status']] }}
+        {{ model.builtin.STATUS_TEXTS[rdoc['status']] }}  {#状态文本#}
       </span>
       {% if rdoc.progress %}{{ rdoc.progress|int }}%{% endif %}
     </h1>
   </div>
 {% if rdoc.compilerTexts.length %}
-  <div class="section__body">
+  <div class="section__body">   {#编译信息#}
     <pre class="compiler-text">{{ rdoc.compilerTexts|join('\n')|ansi|safe }}<div class="compiler-text-mask"><p><span class="icon icon-expand_more">{{ _('Expand') }}</span></p></div></pre>
   </div>
 {% endif %}
 {% if rdoc.judgeTexts.length %}
-  <div class="section__body">
+  <div class="section__body">  {#评测信息#}
     <pre class="judge-text">{{ formatJudgeTexts(rdoc.judgeTexts)|ansi|safe }}</pre>
   </div>
 {% endif %}
 {% if rdoc.testCases.length %}
+{# 测试用例详情表格 #}
   <div class="section__body no-padding">
     <table class="data-table record_detail__table">
       <colgroup>
-        <col class="col--case">
-        <col class="col--status">
-        <col class="col--time">
-        <col class="col--memory">
+        <col class="col--case">       
+        <col class="col--status">    
+        <col class="col--time">      
+        <col class="col--memory">    
       </colgroup>
       <thead>
         <tr>
-          <th class="col--case record-status--border">#</th>
+          <th class="col--case record-status--border">#</th> <!-- 测试点编号 -->
           <th class="col--status">
-            {{ _('Status') }}
+            {{ _('Status') }}                                 <!-- 状态（含分数） -->
             {% if rdoc.subtasks and (rdoc.subtasks|length > 1 or rdoc.subtasks[Object.keys(rdoc.subtasks)[0]].type == 'sum') %}
             <span class="float-right">{{ _('Score') }}</span>
             {% endif %}
           </th>
-          <th class="col--time">{{ _('Time Cost') }}</th>
-          <th class="col--memory">{{ _('Memory Cost') }}</th>
+          <th class="col--time">{{ _('Time Cost') }}</th>     <!-- 时间消耗 -->
+          <th class="col--memory">{{ _('Memory Cost') }}</th> <!-- 内存消耗 -->
         </tr>
       </thead>
       <tbody>
-      {% set _key = 'id' if rdoc.testCases|groupby('subtaskId')|length == 1 else 'subtaskId' %}
+      {% set _key = 'id' if rdoc.testCases|groupby('subtaskId')|length == 1 else 'subtaskId' %}    {#分组策略 ： 如果所有测试用例都属于同一个子任务，按 id 分组
+
+，否则按照subtaskId 分组  #}
       {%- for subtaskId, rcdocs in rdoc.testCases|sort(false,false,_key)|groupby(_key) -%}
-        {% if rcdocs.length > 1 %}
+        {% if rcdocs.length > 1 %}   {# 子任务显示 #}
         <tr class="subtask">
           <td class="col--case">
             #{{ subtaskId|int|default(1) }}
           </td>
           {% if rdoc.subtasks %}
-          <td class="col--status">
-            <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rdoc.subtasks[subtaskId]['status']] }}"></span>
-            <span class="record-status--text {{ model.builtin.STATUS_CODES[rdoc.subtasks[subtaskId]['status']] }}">
-              {{ model.builtin.STATUS_TEXTS[rdoc.subtasks[subtaskId]['status']] }}
+          <td class="col--status">  {# 子任务: 状态和总分  #}
+            <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rdoc.subtasks[subtaskId]['status']] }}"></span>    {# 状态图标 #}
+            <span class="record-status--text {{ model.builtin.STATUS_CODES[rdoc.subtasks[subtaskId]['status']] }}">    {# 状态文本 #}
+              {{ model.builtin.STATUS_TEXTS[rdoc.subtasks[subtaskId]['status']] }}   {# 子任务分数 #}
             </span>
             <span class="float-right record-status--text {{ model.builtin.STATUS_CODES[rdoc.subtasks[subtaskId]['status']] }}">{{ rdoc.subtasks[subtaskId]['score']|default(0) }}</span>
           </td>
@@ -65,24 +70,28 @@
         </tr>
         {% endif %}
         {%- for rcdoc in rcdocs|sort(false,false,'id') -%}
+        {# 测试用例行显示 #}
           <tr class="{{ 'subtask-case' if rcdocs.length == 1 else 'case' }}">
             <td class="col--case record-status--border {{ model.builtin.STATUS_CODES[rcdoc['status']] }}">
               #{{ subtaskId|int|default(1) }}{% if rcdocs.length > 1 %}-{{ rcdoc.id|default(loop.index) }}{% endif %}
+                  {# {{ 子任务ID }}{% if 多测试用例 %}-{{ 测试点ID }} #}
             </td>
             <td class="col--status">
-              <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rcdoc['status']] }}"></span>
-              <span class="record-status--text {{ model.builtin.STATUS_CODES[rcdoc['status']] }}">
-                {{ model.builtin.STATUS_TEXTS[rcdoc['status']] }}
+              <span class="icon record-status--icon {{ model.builtin.STATUS_CODES[rcdoc['status']] }}"></span> {# 测试点状态图标 #}
+              <span class="record-status--text {{ model.builtin.STATUS_CODES[rcdoc['status']] }}">  {#测试点状态文本#}
+                {{ model.builtin.STATUS_TEXTS[rcdoc['status']] }} 
               </span>
+              {# 分数显示条件 #}
               {% if (rdoc.subtasks and _key != 'id' and rcdocs.length == 1) or (_key == 'id' and rdoc.subtasks[rcdoc.subtaskId].type == 'sum') %}
               <span class="float-right record-status--text {{ model.builtin.STATUS_CODES[(rdoc.subtasks[subtaskId]['status'] if _key != 'id' else rcdoc.status)] }}">
                 {{ (rdoc.subtasks[subtaskId]['score'] if _key != 'id' else rcdoc.score)|default(0) }}
               </span>
               {% endif %}
-              <span class="message">{{ formatJudgeTexts([rcdoc.message])|ansi|safe if rcdoc.message else '' }}</span>
+              <span class="message">{{ formatJudgeTexts([rcdoc.message])|ansi|safe if rcdoc.message else '' }}</span>   {#错误信息#}
             </td>
-            <td class="col--time">{% if rcdoc['status'] == STATUS.STATUS_TIME_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_MEMORY_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED %}&ge;{% endif %}{{ rcdoc.time|round|int }}ms</td>
-            <td class="col--memory">{% if rcdoc['status'] == STATUS.STATUS_TIME_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_MEMORY_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED %}&ge;{% endif %}{{ size(rcdoc.memory, 1024) }}</td>
+            {# 超限类型 : 时间 & 内存 #}
+            <td class="col--time">{% if rcdoc['status'] == STATUS.STATUS_TIME_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_MEMORY_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED %}&ge;{% endif %}{{ rcdoc.time|round|int }}ms</td>   
+            <td class="col--memory">{% if rcdoc['status'] == STATUS.STATUS_TIME_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_MEMORY_LIMIT_EXCEEDED or rcdoc['status'] == STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED %}&ge;{% endif %}{{ size(rcdoc.memory, 1024) }}</td>  
           </tr>
         {%- endfor -%}
       {%- endfor -%}

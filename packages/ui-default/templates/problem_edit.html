@@ -56,6 +56,7 @@
             <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">KPI详细配置</h3>
             
             <div class="row">
+              {# 指标类型：区分指标是定量还是定性。采用下拉选择框 #}
               <div class="medium-4 columns">
                 <label style="font-weight: bold; color: #555;">指标类型</label>
                 <select name="indicatorType" class="textbox" style="margin-top: 8px; background: white;">
@@ -64,10 +65,12 @@
                 </select>
               </div>
               <div class="medium-4 columns">
+                {# 用于设定具体的绩效目标数值，是数字输入框 #}
                 <label style="font-weight: bold; color: #555;">目标值</label>
                 <input type="number" name="targetValue" placeholder="例如：100" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['targetValue']|default('') }}">
               </div>
               <div class="medium-4 columns">
+                {# 权重:buchang 0.1 fanwei  0.0 -1.0 #}
                 <label style="font-weight: bold; color: #555;">权重</label>
                 <input type="number" name="weight" step="0.1" min="0" max="1" placeholder="0.0-1.0" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['weight']|default('1.0') }}">
               </div>
@@ -75,15 +78,17 @@
 
             <div class="row" style="margin-top: 15px;">
               <div class="medium-6 columns">
+                {# 单位:用于定义目的值的计量单位 #}
                 <label style="font-weight: bold; color: #555;">单位</label>
                 <input type="text" name="unit" placeholder="例如：万元、个、%" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['unit']|default('') }}">
               </div>
               <div class="medium-6 columns">
+                {# 指定该KPI适用的组织部门：销售部、技术部等 #}
                 <label style="font-weight: bold; color: #555;">适用部门</label>
                 <input type="text" name="applicableDepartment" placeholder="例如：销售部" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['applicableDepartment']|default('') }}">
               </div>
             </div>
-
+            {# 评分标准：用于定义绩效等级划分规则 #}
             <div style="margin-top: 15px;">
               <label style="font-weight: bold; color: #555;">评分标准</label>
               <textarea name="evaluationCriteria" placeholder="例如：≥90:优秀, ≥80:良好, ≥60:合格" class="textbox" style="height: 80px; margin-top: 8px; background: white;">{{ pdoc['evaluationCriteria']|default('') }}</textarea>

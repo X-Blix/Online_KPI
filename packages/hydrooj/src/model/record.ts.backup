@@ -1,4 +1,4 @@
-// 记录(Record)/提交(Submission)模型 ，用于管理在线评测系统中的用户提交记录
+// 记录(Record)/提交(Submission)模型，用于用于在线评测系统（Online Judge）的提交记录管理代码
 import { pick, sum } from 'lodash';
 import moment from 'moment-timezone';
 import {
@@ -22,7 +22,7 @@ export default class RecordModel { // 核心类
     static coll = db.collection('record'); // 主记录集合
     static collStat = db.collection('record.stat'); // 统计信息集合（用于排行榜等）
     static collHistory = db.collection('record.history'); // 历史记录集合
-    static PROJECTION_LIST: (keyof RecordDoc)[] = [ // 查询时返回的字段列表
+    static PROJECTION_LIST: (keyof RecordDoc)[] = [ // 查询时返回的字段列表，包含常规字段和新增的绩效相关字段
         '_id', 'score', 'time', 'memory', 'lang',
         'uid', 'pid', 'rejudged', 'progress', 'domainId',
         'contest', 'judger', 'judgeAt', 'status', 'source',
@@ -37,17 +37,20 @@ export default class RecordModel { // 核心类
     };
 
     // 特数记录类型
-    static RECORD_PRETEST = new ObjectId('000000000000000000000000'); // 预测试
-    static RECORD_GENERATE = new ObjectId('000000000000000000000001'); // 生成题
+    static RECORD_PRETEST = new ObjectId('000000000000000000000000'); // // 预测试记录
+    static RECORD_GENERATE = new ObjectId('000000000000000000000001'); // // 题目生成记录
 
     // 计算提交优先级
     static async submissionPriority(uid: number, base: number = 0) {
+        //获取用户最近30分钟的提交记录
         const timeRecent = await RecordModel.coll
             .find({ _id: { $gte: Time.getObjectID(moment().add(-30, 'minutes')) }, uid, rejudged: { $ne: true } })
             .project({ time: 1, status: 1 }).toArray();
+            //计算正在等待评测的记录数量
         const pending = timeRecent.filter((i) => [
             STATUS.STATUS_WAITING, STATUS.STATUS_FETCHED, STATUS.STATUS_COMPILING, STATUS.STATUS_JUDGING,
         ].includes(i.status)).length;
+        //基于基础优先级、等待数量和耗时计算最终优先级
         return Math.max(base - 10000, base - (pending * 1000 + 1) * (sum(timeRecent.map((i) => i.time || 0)) / 10000 + 1));
     }
 
@@ -82,6 +85,10 @@ export default class RecordModel { // 核心类
     }
 
     static async judge( // 将提交加入评测队列
+            // 1. 验证提交记录和题目存在性
+                // 2. 如果是引用题目，获取原题目信息
+    // 3. 确定评测类型（普通评测、远程评测、题目生成）
+    // 4. 创建评测任务并添加到任务队列
         domainId: string, rids: MaybeArray<ObjectId> | RecordDoc, priority = 0,
         config: ProblemConfigFile = {}, meta: Partial<JudgeMeta> = {},
     ) {
@@ -143,8 +150,8 @@ export default class RecordModel { // 核心类
         } = { type: 'judge' },
     ) {
         const data: RecordDoc = {
-            status: STATUS.STATUS_WAITING,
-            _id: new ObjectId(),
+            status: STATUS.STATUS_WAITING,   // 初始状态为等待评测
+            _id: new ObjectId(), // 生成唯一ID
             uid,
             code,
             lang,

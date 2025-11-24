@@ -1,5 +1,8 @@
+{# 评测记录主页面的模版。评测记录列表页面的完整实现 #}
+{# 评测系统核心入口页面。 #}
 {% extends "layout/basic.html" %}
 {% block content %}
+{# 实时更新设置 #}
 {{ set(
   UiContext, 'socketUrl',
   "record-conn?domainId=" + handler.args.domainId
@@ -12,6 +15,7 @@
 {{ set(UiContext, 'rids', rdocs.map(eval("rdoc=>rdoc._id.toString()"))) }}
 <div class="row">
   <div class="medium-12 columns">
+    {# 筛选表单区域 #}
     <form method="get">
       <div class="section">
         <div class="section__header">
@@ -23,9 +27,10 @@
         </div>
         <div class="section__body">
           <div class="row">
+            {# 筛选条件 #}
             <div class="medium-2 columns">
-              <label class="filter-user">
-                {{ _('By Username / UID') }}
+              <label class="filter-user">   
+                {{ _('By Username / UID') }} {#  用户名筛选 #}
                 <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off" data-autofocus>
               </label>
             </div>
@@ -64,15 +69,18 @@
         </div>
       </div>
     </form>
+    {# 记录列表区域 #}
     <div class="section">
       <div class="section__body no-padding">
-      {% if not rdocs.length %}
+        {# 空状态处理 #}
+      {% if not rdocs.length %} 
         {% if not filterUidOrName and not filterPid and not filterTid %}
         {{ nothing.render('Oh, there is no task in the queue!') }}
         {% else %}
         {{ nothing.render('Oh, there are no tasks that match the filter!') }}
         {% endif %}
       {% else %}
+      {# 数据表格 #}
         <table class="data-table record_main__table">
           <colgroup>
             <col class="col--status">
@@ -102,6 +110,7 @@
           {%- endfor -%}
           </tbody>
         </table>
+        {# 分页器 #}
         {% if handler.user.hasPriv(PRIV.PRIV_VIEW_JUDGE_STATISTICS) or filterTid or filterPid or filterUidOrName %}
         <ul class="pager">
           <li>
@@ -119,12 +128,14 @@
       {% endif %}
       </div>
     </div>
+    {# 统计信息区域 #}
     {% if statistics %}
     <div class="section">
       <div class="section__header">
         <h1 class="section__title">{{ _('Statistics') }}</h1>
       </div>
       <div class="section__body">
+        {# 5分钟内、1小时内、今天、本周、本月、今年、总计 #}
         <dl class="large horizontal">
           <dt>{{ _('5 Min')}}</dt><dd>{{ statistics['d5min'] }}</dd>
           <dt>{{ _('1 Hour')}}</dt><dd>{{ statistics['d1h'] }}</dd>

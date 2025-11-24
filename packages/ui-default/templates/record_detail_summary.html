@@ -1,17 +1,23 @@
+{# 测评记录详情页面的摘要信息区域。显示代码提交的总体统计信息 #}
 <dl class="large horizontal" id="summary">
+  {# 如果有分数，显示总分 #}
   {% if typeof(rdoc['score']) == 'number' %}
     <dt>{{ _('Score') }}</dt>
     <dd>{{ rdoc['score'] }}</dd>
   {% endif %}
+  {# 超限状态判断 #}
   {% set _ge = rdoc['status'] == STATUS.STATUS_TIME_LIMIT_EXCEEDED or rdoc['status'] == STATUS.STATUS_MEMORY_LIMIT_EXCEEDED or rdoc['status'] == STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED %}
+  {# 总时间显示 #}
   {% if rdoc['time'] %}
     <dt>{{ _('Total Time') }}</dt>
     <dd>{% if _ge %}&ge;{% endif %}{{ rdoc.time|round(0) }}ms</dd>
   {% endif %}
+  {# 峰值时间显示 #}
   {% if rdoc.testCases.length %}
     <dt>{{ _('Peak Time') }}</dt>
     <dd>{% if _ge %}&ge;{% endif %}{{ (rdoc.testCases|sort(true, true, "time")|first)["time"]|round(0) }}ms</dd>
   {% endif %}
+  {# 峰值内存显示 #}
   {% if rdoc['memory'] %}
     <dt>{{ _('Peak Memory') }}</dt>
     <dd>{% if _ge %}&ge;{% endif %}{{ size(rdoc.memory, 1024) }}</dd>

@@ -1,160 +1,40 @@
 {% extends "layout/basic.html" %}
 {% block content %}
+{{ set(UiContext, 'pdoc', pdoc) }}
 <div class="row">
   <div class="medium-9 columns">
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title">🎯 KPI指标配置</h1>
+        <h1 class="section__title">{{ _('Submit to Judge') }}</h1>
       </div>
-      
-      <div class="section__body" style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-        <form method="post">
-          <!-- 基础信息区域 -->
+      <div class="section__body typo" name="submit_section">
+        <form method="post" enctype="multipart/form-data">
+          <div class="hasjs--hide">
+            {{ form.form_select({
+                label:'Code language',
+                options:langRange,
+                name:'lang',
+                value:handler.user.codeLang
+              }) }}
+          </div>
+          <div class="row nojs--hide" id="codelang-selector"></div>
+          {{ form.form_textarea({label:'Code', columns:12, name:'code', extra_class:'monospace', autofocus:true, nospellcheck:true}) }}
           <div class="row">
-            <div class="medium-3 columns">
-              <label style="font-weight: bold; color: #555;">
-                {{ _('pid') }}
-                <input name="pid" placeholder="P1000" value="{{ pdoc['pid']|default('') }}" class="textbox" style="background: white; margin-top: 5px;">
-              </label>
-            </div>
-            <div class="medium-7 columns">
-              <label style="font-weight: bold; color: #555;">
-                {{ _('Title') }}
-                <input name="title" placeholder="{{ _('title') }}" value="{{ pdoc['title']|default('') }}" class="textbox" style="background: white; margin-top: 5px;"{% if page_name == 'problem_create' %} autofocus{% endif %}>
-              </label>
-            </div>
-            <div class="medium-2 columns">
-              <label style="font-weight: bold; color: #555; display: block; margin-top: 25px;">
-                <label class="checkbox">
-                  <input type="checkbox" name="hidden" value="on"{% if pdoc['hidden'] %} checked{% endif %} class="checkbox"> {{ _('Hidden') }}
-                </label>
-              </label>
+            <div class="medium-12 columns">
+              <p>{{ _('Or upload a file:') }} <input type="file" name="file"></p>
+              <br />
             </div>
           </div>
-          
-          <div class="row" style="margin-top: 15px;">
-            {{ form.form_text({
-                 row:false,
-                 columns:9,
-                 label:'Tags',
-                 help_text:'Split by \', \'.',
-                 name:'tag',
-                 value:pdoc['tag']|default([])|join(', ')
-               }) }}
-            {{ form.form_text({
-                 row:false,
-                 columns:3,
-                 label:'Difficulty',
-                 help_text:'From 1-10',
-                 name:'difficulty',
-                 value:pdoc['difficulty'] or ''
-               }) }}
-          </div>
-
-          <!-- KPI字段区域 -->
-          <div style="border-top: 2px solid #3498db; margin: 25px 0; padding-top: 20px;">
-            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">KPI详细配置</h3>
-            
-            <div class="row">
-              <div class="medium-4 columns">
-                <label style="font-weight: bold; color: #555;">指标类型</label>
-                <select name="indicatorType" class="textbox" style="margin-top: 8px; background: white;">
-                  <option value="quantitative">📈 定量指标</option>
-                  <option value="qualitative">📝 定性指标</option>
-                </select>
-              </div>
-              <div class="medium-4 columns">
-                <label style="font-weight: bold; color: #555;">目标值</label>
-                <input type="number" name="targetValue" placeholder="例如：100" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['targetValue']|default('') }}">
-              </div>
-              <div class="medium-4 columns">
-                <label style="font-weight: bold; color: #555;">权重</label>
-                <input type="number" name="weight" step="0.1" min="0" max="1" placeholder="0.0-1.0" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['weight']|default('1.0') }}">
-              </div>
-            </div>
-
-            <div class="row" style="margin-top: 15px;">
-              <div class="medium-6 columns">
-                <label style="font-weight: bold; color: #555;">单位</label>
-                <input type="text" name="unit" placeholder="例如：万元、个、%" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['unit']|default('') }}">
-              </div>
-              <div class="medium-6 columns">
-                <label style="font-weight: bold; color: #555;">适用部门</label>
-                <input type="text" name="applicableDepartment" placeholder="例如：销售部" class="textbox" style="margin-top: 8px; background: white;" value="{{ pdoc['applicableDepartment']|default('') }}">
-              </div>
-            </div>
-
-            <div style="margin-top: 15px;">
-              <label style="font-weight: bold; color: #555;">评分标准</label>
-              <textarea name="evaluationCriteria" placeholder="例如：≥90:优秀, ≥80:良好, ≥60:合格" class="textbox" style="height: 80px; margin-top: 8px; background: white;">{{ pdoc['evaluationCriteria']|default('') }}</textarea>
-            </div>
-          </div>
-
-          <!-- 其他表单内容 -->
-          <div class="section__tab-container nojs--hide">
-            <div class="section__tab-header-wrapper">
-              <ul class="section__tab-header">
-                <li class="section__tab-header-item tab--active" data-lang="{{ _('__id') }}">{{ _('__langname') }}</li>
-                {% for k, v in statementLangs %}{% if k != handler.user.viewLang %}
-                  <li class="section__tab-header-item" data-lang="{{ k }}">{{ v }}</li>
-                {% endif %}{% endfor %}
-              </ul>
-            </div>
-          </div>
-          
-          <div><textarea data-editor{% if page_name == 'problem_edit' %} autofocus{% endif %} class="textbox auto-resize nojs--hide"></textarea></div>
-          <textarea name="content" class="textbox hasjs--hide" data-markdown-upload style="height: 500px">{% if pdoc %}{{ pdoc['content']|toString }}{% else %}{% include 'partials/problem_default.md' %}{% endif %}</textarea>
-          
-          <div class="row">
-            <div class="columns">
-              {% if page_name == 'problem_edit' %}
-                <button type="submit" class="rounded primary button">
-                  {{ _('Update') }}
-                </button>
-                {% if handler.user.own(pdoc, perm.PERM_EDIT_PROBLEM_SELF) or handler.user.hasPerm(perm.PERM_EDIT_PROBLEM) %}
-                  <button name="operation" value="delete" type="submit" class="rounded button">
-                    {{ _('Delete') }}
-                  </button>
-                {% endif %}
-              {% else %}
-                <button type="submit" class="rounded primary button">
-                  {{ _('Create') }}
-                </button>
-              {% endif %}
-            </div>
-          </div>
+          <div class="row"><div class="columns">
+            <input type="submit" class="rounded primary button" value="{{ _('Submit') }}">
+          </div></div>
         </form>
       </div>
     </div>
   </div>
-  
-  <!-- 右侧边栏保持不变 -->
   <div class="medium-3 columns">
-    <div class="section side visiable nojs--hide section--problem-sidebar-tags">
-      <div class="section__header">
-        <h1 class="section__title">{{ _('Categories') }} ({{ _('click to add') }})</h1>
-      </div>
-      <div class="section__body problem-sidebar-tags__detail">
-        {% include "partials/category.html" %}
-      </div>
-    </div>
-    {% if page_name == 'problem_edit' %}
-      <div class="section side" data-type="additional_file" data-sidebar>
-        <div class="section__header">
-          <h1 class="section__title">{{_('Additional Files')}}</h1>
-          <div class="section__tools">
-            <button class="primary rounded button" name="upload_file">{{ _('Upload') }}</button>
-          </div>
-        </div>
-        {% set sidebar = true %}
-        {% set can_edit = true %}
-        {% set filetype = "additional_file" %}
-        {% include "partials/problem_files.html" %}
-      </div>
-      {% include "partials/problem_sidebar.html" %}
-    {% else %}
-      {% include 'components/md_hint.html' %}
-    {% endif %}
+    {% include "partials/problem_sidebar.html" %}
   </div>
 </div>
+
 {% endblock %}
