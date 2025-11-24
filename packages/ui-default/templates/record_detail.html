@@ -1,4 +1,4 @@
-{# 测评记录详情页面的主模板文件  #}
+{# 绩效填报记录详情页面的主模板文件  #}
 {% import "components/problem.html" as problem with context %}
 {% extends "layout/basic.html" %}
 {% block content %}
@@ -9,104 +9,179 @@
 <div class="row">
   {# 左栏，显示主要信息 #}
   <div class="medium-9 columns collapsed">
-    {# 评测状态区域 #}
+    {# 绩效填报状态区域 #}
     {% if typeof(rdoc['status']) === 'number' %}
       {% include 'record_detail_status.html' %}
     {% endif %}
-    {# 代码显示区域 #}
-    {% if rdoc['code'] or rdoc.files.code %}
+    
+    {# 绩效填报内容区域 - 替换原来的代码显示 #}
+    {% if rdoc.filledValue is defined or rdoc.filledText %}
     <div class="section">
       <div class="section__header">
-        <h1 class="section__title">{{ _('Code') }}</h1>
+        <h1 class="section__title">📊 绩效填报详情</h1>
         <div class="section__tools">
-          <a class="primary rounded button" href="?download=true">
-            <span class="icon icon-download"></span>
-            {% if rdoc.files.hack %}{{ _('Download Hack Input') }}{% else %}{{ _('Download') }}{% endif %}
+          {% if rdoc.evidenceFiles and rdoc.evidenceFiles.length %}
+          <a class="primary rounded button" href="{{ url('record_download_evidence', rid=rdoc._id) }}">
+            <span class="icon icon-download"></span> 下载证明材料
           </a>
+          {% endif %}
         </div>
       </div>
       <div class="section__body">
-        {# 代码高亮 #}
-        <pre class="line-numbers"><code class="language-{{ model.setting.langs[rdoc.lang].highlight }}">{{ rdoc['code'] }}</code></pre>
+        {# 绩效数据展示 #}
+        <div class="row">
+          <div class="medium-6 columns">
+            <div class="form__item">
+              <label class="form__label" style="font-weight: bold; color: #555;">
+                完成数值
+              </label>
+              <div class="textbox" style="background: #f8f9fa; padding: 10px; border-radius: 4px;">
+                {{ rdoc.filledValue|default('未填写') }}
+                {% if pdoc.targetValue %}
+                <small style="color: #666;"> / 目标值: {{ pdoc.targetValue }} {{ pdoc.unit|default('') }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="medium-6 columns">
+            <div class="form__item">
+              <label class="form__label" style="font-weight: bold; color: #555;">
+                审核状态
+              </label>
+              <div class="textbox" style="background: 
+                {% if rdoc.kpiStatus == 'approved' %}#d4edda
+                {% elif rdoc.kpiStatus == 'rejected' %}#f8d7da
+                {% else %}#fff3cd{% endif %}; 
+                padding: 10px; border-radius: 4px; font-weight: bold;">
+                {% if rdoc.kpiStatus == 'pending' %}⏳ 待审核
+                {% elif rdoc.kpiStatus == 'approved' %}✅ 已通过
+                {% elif rdoc.kpiStatus == 'rejected' %}❌ 已拒绝
+                {% else %}📝 待审核{% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {# 完成情况说明 #}
+        {% if rdoc.filledText %}
+        <div class="form__item" style="margin-top: 20px;">
+          <label class="form__label" style="font-weight: bold; color: #555;">
+            完成情况说明
+          </label>
+          <div class="textbox" style="background: #f8f9fa; padding: 15px; border-radius: 4px; min-height: 100px; white-space: pre-wrap;">
+            {{ rdoc.filledText }}
+          </div>
+        </div>
+        {% endif %}
+
+        {# 绩效得分 #}
+        {% if rdoc.kpiScore is not none %}
+        <div class="form__item" style="margin-top: 20px;">
+          <label class="form__label" style="font-weight: bold; color: #555;">
+            绩效得分
+          </label>
+          <div class="textbox" style="background: #e7f3ff; padding: 10px; border-radius: 4px; font-size: 1.2em; font-weight: bold;">
+            {{ rdoc.kpiScore }} 分
+          </div>
+        </div>
+        {% endif %}
+
+        {# 主管反馈 #}
+        {% if rdoc.feedback %}
+        <div class="form__item" style="margin-top: 20px;">
+          <label class="form__label" style="font-weight: bold; color: #555;">
+            💬 主管反馈
+          </label>
+          <div class="textbox" style="background: #fff3cd; padding: 15px; border-radius: 4px; border-left: 4px solid #ffc107;">
+            {{ rdoc.feedback }}
+          </div>
+        </div>
+        {% endif %}
+
+        {# 证明材料 #}
+        {% if rdoc.evidenceFiles and rdoc.evidenceFiles.length %}
+        <div class="form__item" style="margin-top: 20px;">
+          <label class="form__label" style="font-weight: bold; color: #555;">
+            📎 证明材料
+          </label>
+          <div class="textbox" style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
+            <ul style="margin: 0; padding-left: 20px;">
+              {% for file in rdoc.evidenceFiles %}
+              <li>
+                <a href="{{ url('record_download_evidence', rid=rdoc._id, filename=file.split('#')[1]) }}" target="_blank">
+                  {{ file.split('#')[1] }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
+
+    {# 保留原有的代码显示区域（隐藏）用于兼容性 #}
+    {% if rdoc['code'] or rdoc.files.code %}
+    <div class="section" style="display: none;">
+      <!-- 原有代码显示区域，隐藏但保留 -->
+    </div>
+    {% endif %}
   </div>
+
   {# 右栏，显示侧边栏信息 #}
   <div class="medium-3 columns">
     <div class="section side">
       <div class="section__header">
         <h1 class="section__title">{{ _('Information') }}</h1>
       </div>
-       {# 管理员操作菜单 #}
-    {% if handler.user.hasPerm(perm.PERM_REJUDGE) and not rdoc.files.hack %}
+      
+      {# 管理员操作菜单 #}
+      {% if handler.user.hasPerm(perm.PERM_REJUDGE) and not rdoc.files.hack %}
       <div class="section__body no-padding">
         <ol class="menu">
           <li class="menu__item">
             <form method="post">
               <button type="submit" name="operation" value="rejudge" class="menu__link">
-                <span class="icon icon-refresh"></span> {{ _('Rejudge') }}
+                <span class="icon icon-refresh"></span> 重新审核
               </button>
             </form>
           </li>
           <li class="menu__item">
             <form method="post">
               <button type="submit" name="operation" value="cancel" class="menu__link">
-                <span class="icon icon-close"></span> {{ _('Cancel Score') }}
+                <span class="icon icon-close"></span> 取消评分
               </button>
             </form>
           </li>
         </ol>
       </div>
-    {% endif %}
-    {# Hack功能菜单 #}
-    {% if handler.user.hasPerm(perm.PERM_SUBMIT_PROBLEM) and pdoc.config.hackable and rdoc.status === STATUS.STATUS_ACCEPTED and rdoc.uid !== handler.user._id %}
-      <div class="section__body no-padding">
-        <ol class="menu">
-          <li class="menu__item">
-            <a class="menu__link" href="{{ url('problem_hack', pid=pdoc.pid|default(pdoc.docId), rid=rdoc._id, query={tid:rdoc.contest} if rdoc.contest else {}) }}">
-              <span class="icon icon-debug"></span> {{ _('Hack') }}
-            </a>
-          </li>
-        </ol>
-      </div>
-    {% endif %}
+      {% endif %}
+
       <div class="section__body typo no-media">
         <dl class="large horizontal">
-          <dt>{{ _('Submit By') }}</dt>
+          <dt>填报人员</dt>
           <dd>{{ user.render_inline(udoc, modbadge=false) }}</dd>
-          {% if rdoc.hackTarget %}
-            <dt>{{ _('Hacked') }}</dt>
-            <dd><a href="{{ url('record_detail', rid=rdoc.hackTarget) }}">{{ rdoc.hackTarget }}</a></dd>
-          {% endif %}
           {% if pdoc %}
-            <dt>{{ _('Problem') }}</dt>
+            <dt>KPI指标</dt>
             <dd>
               {{ problem.render_problem_title(pdoc, tdoc, show_tags=false, show_invisible_flag=false) }}
             </dd>
           {% endif %}
           {% if tdoc %}
-            <dt>{{ _('Homework') if tdoc.rule == 'homework' else _('Contest') }}</dt>
+            <dt>{{ '考核任务' if tdoc.rule == 'homework' else '考核周期' }}</dt>
             <dd>
               <a href="{{ url('homework_detail' if tdoc.rule == 'homework' else 'contest_detail', tid=tdoc.docId) }}">{{ tdoc.title }}</a>
             </dd>
           {% endif %}
-          {% if pdoc.config.type != 'objective' %}
-            <dt>{{ _('Language') }}</dt>
-            <dd>{{ model.setting.langs[rdoc.lang].display }}</dd>
-          {% endif %}
-          {% if rdoc.code %}
-            <dt>{{ _('Code Length') }}</dt>
-            <dd>{{ size(rdoc.code|length) }}</dt>
-          {% endif %}
-          <dt>{{ _('Submit At') }}</dt>
+          <dt>填报时间</dt>
           <dd>{{ datetimeSpan(rdoc._id, false)|safe }}</dd>
           {% if rdoc.judgeAt %}
-            <dt>{{ _('Judged At') }}</dt>
+            <dt>审核时间</dt>
             <dd>{{ datetimeSpan(rdoc.judgeAt, false)|safe }}</dd>
           {% endif %}
           {% if judge_udoc %}
-            <dt>{{ _('Judged By') }}</dt>
+            <dt>审核人员</dt>
             <dd>{{ user.render_inline(judge_udoc, badge=false) }}</dd>
           {% endif %}
         </dl>
@@ -116,6 +191,7 @@
         {% endif %}
       </div>
     </div>
+
     {# 历史版本 #}
     {% if allRevs|length %}
       <div class="section side">
@@ -142,4 +218,23 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+/* 样式优化 */
+.form__item {
+  margin-bottom: 15px;
+}
+
+.form__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.textbox {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px 15px;
+}
+</style>
 {% endblock %}
