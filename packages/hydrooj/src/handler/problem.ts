@@ -1087,6 +1087,50 @@ declare module '@hydrooj/framework' {
     }
 }
 
+export class ProblemEvidenceDownloadHandler extends Handler {
+    @param('rid', Types.ObjectId)
+    @param('filename', Types.String, true)
+    async get(domainId: string, rid: ObjectId, filename?: string) {
+        // 获取记录文档
+        const rdoc = await record.get(domainId, rid);
+        if (!rdoc) throw new RecordNotFoundError(domainId, rid);
+        
+        // 检查权限：只能查看自己的记录或有查看权限
+        if (rdoc.uid !== this.user._id) {
+            this.checkPerm(PERM.PERM_VIEW_RECORD);
+        }
+
+        if (!rdoc.evidenceFiles || !rdoc.evidenceFiles.length) {
+            throw new NotFoundError('未找到证明材料');
+        }
+
+        // 如果指定了文件名，下载特定文件；否则下载第一个文件
+        let targetFile = rdoc.evidenceFiles[0];
+        if (filename) {
+            const found = rdoc.evidenceFiles.find(f => {
+                const parts = f.split('#');
+                return parts.length > 1 && parts[1] === filename;
+            });
+            if (found) targetFile = found;
+            else throw new NotFoundError('文件未找到: ' + filename);
+        }
+
+        // 提取文件ID和原始文件名
+        const parts = targetFile.split('#');
+        const fileId = parts[0];
+        const originalFilename = parts.length > 1 ? parts[1] : 'evidence';
+
+        // 生成下载链接
+        this.response.redirect = await storage.signDownloadLink(
+            `submission/${fileId}`,
+            originalFilename,
+            false,
+            'user'
+        );
+    }
+}
+
+// 路由注册
 export async function apply(ctx: Context) {
     ctx.Route('problem_main', '/p', ProblemMainHandler, PERM.PERM_VIEW_PROBLEM);
     ctx.Route('problem_random', '/problem/random', ProblemRandomHandler, PERM.PERM_VIEW_PROBLEM);
@@ -1103,6 +1147,8 @@ export async function apply(ctx: Context) {
     ctx.Route('problem_solution_reply_raw', '/p/:pid/solution/:psid/:psrid/raw', ProblemSolutionRawHandler, PERM.PERM_VIEW_PROBLEM);
     ctx.Route('problem_statistics', '/p/:pid/stat', ProblemStatisticsHandler, PERM.PERM_VIEW_PROBLEM);
     ctx.Route('problem_create', '/problem/create', ProblemCreateHandler, PERM.PERM_CREATE_PROBLEM);
+    ctx.Route('record_download_evidence', '/record/:rid/evidence', ProblemEvidenceDownloadHandler);
+    ctx.Route('record_download_evidence_file', '/record/:rid/evidence/:filename', ProblemEvidenceDownloadHandler);
     await ctx.inject(['api'], ({ api }) => {
         api.provide(ProblemApi);
     });
