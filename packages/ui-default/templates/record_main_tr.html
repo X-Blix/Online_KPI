@@ -1,50 +1,134 @@
-{# 评测记录列表页面中的单行记录模板 ：在评测记录表格中显示每一条提交记录的基本信息#}
+{# 绩效填报记录列表页面中的单行记录模板 #}
 {% import "components/record.html" as record with context %}
 {% import "components/user.html" as user with context %}
 {% import "components/problem.html" as problem with context %}
 {# 行数据属性 #}
 <tr data-rid="{{ rdoc['_id'] }}">
-  {% set _isPretest = rdoc.contest and rdoc.contest.toString() == '000000000000000000000000' %}
-  {# 状态列:调用组件渲染评测状态（状态图标、分数、状态文本等） #}
-  {{ record.render_status_td(rdoc, allDomain = allDomain) }}
-  {# 题目名称列（包含管理员操作 #}
-  {# 管理员：如果用户有重新评测的权限，不是Hack记录、不是预测试， 显示 “重新评测”“取消分数”按钮 #}
-  <td class="col--problem col--problem-name">
-  {% if handler.user.hasPerm(perm.PERM_REJUDGE) and not rdoc.files.hack and not _isPretest %}
-    <form class="form--inline" method="post" action="{{ url('record_detail', rid=rdoc._id, domainId=rdoc.domainId) }}">
-      <button type="submit" name="operation" value="rejudge" class="link text-maroon lighter">
-        <span class="icon icon-refresh"></span>
-        {{ _('Rejudge') }}
-      </button> 
-      <button type="submit" name="operation" value="cancel" class="link text-maroon lighter">
-        <span class="icon icon-close"></span>
-        {{ _('Cancel Score') }}
-      </button> |
-    </form>
-  {% endif %}
-  {# 题目信息显示 ：
-      比赛中的题目：显示题目标题
-      普通题目：如果题目不隐藏或用户有权限，显示题目标题
-      无权限：显示 * 代替题目名称
-  #}
-  {% if pdoc and rdoc.contest %}
-    {{ problem.render_problem_title(pdoc, tdoc=tdoc, show_tags=false, show_invisible_flag=false) }}
-  {% elif pdoc and (not pdoc.hidden or handler.user.hasPerm(perm.PERM_VIEW_PROBLEM_HIDDEN) or handler.user.own(pdoc)) %}
-    {{ problem.render_problem_title(pdoc, show_tags=false) }}
-  {% else %}
-    *
-  {% endif %}
-  {# 特殊标记  Hack记录 + 预测试： 显示橙色标记 #}
-  {% if rdoc.files.hack %}<span class="text-orange">({{ _('Hack') }})</span>{% endif %}
-  {% if _isPretest %}<span class="text-orange">({{ _('Pretest') }})</span>{% endif %}
+  {# 审核状态列 #}
+  <td class="col--status record-status--border">
+    <div style="text-align: center;">
+      {# 审核状态显示 #}
+      {% if rdoc.kpiStatus == 'pending' %}
+        <span class="status--pending" title="待审核">⏳</span>
+      {% elif rdoc.kpiStatus == 'approved' %}
+        <span class="status--approved" title="已通过">✅</span>
+      {% elif rdoc.kpiStatus == 'rejected' %}
+        <span class="status--rejected" title="已拒绝">❌</span>
+      {% else %}
+        <span class="status--pending" title="待审核">⏳</span>
+      {% endif %}
+      <br>
+      <small style="font-size: 0.8em;">
+        {% if rdoc.kpiStatus == 'pending' %}待审核
+        {% elif rdoc.kpiStatus == 'approved' %}已通过
+        {% elif rdoc.kpiStatus == 'rejected' %}已拒绝
+        {% else %}待审核{% endif %}
+      </small>
+    </div>
   </td>
-  {# 提交者 #}
+  
+  {# KPI指标名称列 #}
+  <td class="col--problem col--problem-name">
+    {# 管理员操作按钮 - 改为审核相关操作 #}
+    {% if handler.user.hasPerm(perm.PERM_REJUDGE) %}
+      <form class="form--inline" method="post" action="{{ url('record_detail', rid=rdoc._id, domainId=rdoc.domainId) }}">
+        <button type="submit" name="operation" value="rejudge" class="link text-maroon lighter" title="重新审核">
+          <span class="icon icon-refresh"></span>
+          重新审核
+        </button> 
+        <button type="submit" name="operation" value="cancel" class="link text-maroon lighter" title="取消评分">
+          <span class="icon icon-close"></span>
+          取消评分
+        </button> |
+      </form>
+    {% endif %}
+    
+    {# KPI指标信息显示 #}
+    {% if pdoc and rdoc.contest %}
+      {{ problem.render_problem_title(pdoc, tdoc=tdoc, show_tags=false, show_invisible_flag=false) }}
+    {% elif pdoc and (not pdoc.hidden or handler.user.hasPerm(perm.PERM_VIEW_PROBLEM_HIDDEN) or handler.user.own(pdoc)) %}
+      {{ problem.render_problem_title(pdoc, show_tags=false) }}
+    {% else %}
+      <span class="text-gray">[指标已删除]</span>
+    {% endif %}
+    
+    {# 特殊标记 - 改为绩效相关标记 #}
+    {% if rdoc.evidenceFiles and rdoc.evidenceFiles.length %}
+      <span class="text-blue" title="有证明材料">📎</span>
+    {% endif %}
+  </td>
+  
+  {# 填报人员 #}
   <td class="col--submit-by">{{ user.render_inline(udoc, avatar=false, badge=false) }}</td>
-  {# 时间消耗 #}
-  <td class="col--time">{% if rdoc['time'] %}{% if [STATUS.STATUS_TIME_LIMIT_EXCEEDED, STATUS.STATUS_MEMORY_LIMIT_EXCEEDED, STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED].includes(rdoc['status']) %}&ge;{% endif %}{{ rdoc.time|round|int }}ms{% else %}-{% endif %}</td>
-  <td class="col--memory">{% if rdoc['memory'] %}{% if [STATUS.STATUS_TIME_LIMIT_EXCEEDED, STATUS.STATUS_MEMORY_LIMIT_EXCEEDED, STATUS.STATUS_OUTPUT_LIMIT_EXCEEDED].includes(rdoc['status']) %}&ge;{% endif %}{{ size(rdoc.memory, 1024) }}{% else %}-{% endif %}</td>
-  {# 提交语言 #}
-  <td class="col--lang">{{ model.setting.langs[rdoc['lang']].display }}</td>
-  {# 提交时间 #}
+  
+  {# 完成数值 #}
+  <td class="col--value">
+    {% if rdoc.filledValue is not none %}
+      <strong>{{ rdoc.filledValue }}</strong>
+      {% if pdoc and pdoc.targetValue %}
+        <br>
+        <small class="text-gray">
+          {% set percentage = (rdoc.filledValue / pdoc.targetValue * 100)|round(1) %}
+          {{ percentage }}%
+        </small>
+      {% endif %}
+    {% else %}
+      <span class="text-gray">-</span>
+    {% endif %}
+  </td>
+  
+  {# 绩效得分 #}
+  <td class="col--score">
+    {% if rdoc.kpiScore is not none %}
+      <strong style="font-size: 1.1em; color: #28a745;">{{ rdoc.kpiScore }}</strong>
+    {% else %}
+      <span class="text-gray">-</span>
+    {% endif %}
+  </td>
+  
+  {# 填报时间 #}
   <td class="col--submit-at">{{ datetimeSpan(rdoc['_id'])|safe }}</td>
+  
+  {# 操作列 #}
+  <td class="col--actions">
+    <a href="{{ url('record_detail', rid=rdoc._id) }}" class="link" title="查看详情">
+      <span class="icon icon-eye"></span> 查看
+    </a>
+    {% if handler.user._id == rdoc.uid or handler.user.hasPerm(perm.PERM_EDIT_RECORD) %}
+      <br>
+      {# 操作权限控制 #}
+      <a href="{{ url('record_detail', rid=rdoc._id) }}?edit=true" class="link text-orange" title="编辑">
+        <span class="icon icon-edit"></span> 编辑
+      </a>
+    {% endif %}
+  </td>
 </tr>
+
+<style>
+/* 状态颜色 */
+.status--pending { color: #ffc107; font-size: 1.2em; }
+.status--approved { color: #28a745; font-size: 1.2em; }
+.status--rejected { color: #dc3545; font-size: 1.2em; }
+
+/* 列样式 */
+.col--value, .col--score, .col--actions {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.col--value strong {
+  color: #1890ff;
+}
+
+.col--score strong {
+  color: #52c41a;
+}
+
+.text-gray {
+  color: #999;
+}
+
+.text-blue {
+  color: #1890ff;
+}
+</style>

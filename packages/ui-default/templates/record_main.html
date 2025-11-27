@@ -1,5 +1,4 @@
-{# 评测记录主页面的模版。评测记录列表页面的完整实现 #}
-{# 评测系统核心入口页面。 #}
+{# 绩效填报记录主页面的模版。绩效填报记录列表页面的完整实现 #}
 {% extends "layout/basic.html" %}
 {% block content %}
 {# 实时更新设置 #}
@@ -19,10 +18,10 @@
     <form method="get">
       <div class="section">
         <div class="section__header">
-          <h1 class="section__title">{{ _('Filter') }}</h1>
+          <h1 class="section__title">📊 绩效记录筛选</h1>
           <div class="section__tools">
-            <button type="submit" class="primary button"><span class="icon icon-filter"></span> {{ _('Filter') }}</button>
-            <a href="{{ url('record_main') }}" class="button">{{ _('Reset') }}</a>
+            <button type="submit" class="primary button"><span class="icon icon-filter"></span> 筛选</button>
+            <a href="{{ url('record_main') }}" class="button">重置</a>
           </div>
         </div>
         <div class="section__body">
@@ -30,39 +29,40 @@
             {# 筛选条件 #}
             <div class="medium-2 columns">
               <label class="filter-user">   
-                {{ _('By Username / UID') }} {#  用户名筛选 #}
+                填报人员
                 <input name="uidOrName" type="text" class="textbox" value="{{ filterUidOrName }}" autocomplete="off" data-autofocus>
               </label>
             </div>
             <div class="medium-2 columns">
               <label>
-                {{ _('By Problem') }}
+                KPI指标
                 <input name="pid" type="text" class="textbox" value="{{ filterPid }}">
               </label>
             </div>
             <div class="medium-2 columns">
               <label>
-                {{ _('By Contest') }}
+                考核周期
                 <input name="tid" type="text" class="textbox" value="{{ filterTid }}">
               </label>
             </div>
             <div class="medium-3 columns">
               <label>
-                {{ _('By Language') }}
+                审核状态
               </label>
-              <select class="compact select" name="lang">
-                <option value="">{{ _('All Languages') }}</option>
+              <select class="compact select" name="status">
+                <option value="">全部状态</option>
+                <option value="pending" {% if filterStatus == 'pending' %}selected{% endif %}>⏳ 待审核</option>
+                <option value="approved" {% if filterStatus == 'approved' %}selected{% endif %}>✅ 已通过</option>
+                <option value="rejected" {% if filterStatus == 'rejected' %}selected{% endif %}>❌ 已拒绝</option>
               </select>
             </div>
             <div class="medium-3 columns">
               <label>
-                {{ _('By Status') }}
+                排序方式
               </label>
-              <select class="compact select" name="status">
-                <option value="" {% if typeof(filterStatus) != 'number' %}selected{% else %}{% endif %}>{{ _('All Submissions') }}</option>
-                {%- for k,v in utils.status.STATUS_TEXTS -%}
-                <option value="{{k}}" {% if filterStatus == k %}selected{% else %}{% endif %}>{{v}}</option>
-                {%- endfor -%}
+              <select class="compact select" name="sort">
+                <option value="date">填报时间</option>
+                <option value="score">绩效得分</option>
               </select>
             </div>
           </div>
@@ -75,9 +75,9 @@
         {# 空状态处理 #}
       {% if not rdocs.length %} 
         {% if not filterUidOrName and not filterPid and not filterTid %}
-        {{ nothing.render('Oh, there is no task in the queue!') }}
+        {{ nothing.render('目前还没有绩效填报记录！') }}
         {% else %}
-        {{ nothing.render('Oh, there are no tasks that match the filter!') }}
+        {{ nothing.render('没有找到符合条件的绩效记录！') }}
         {% endif %}
       {% else %}
       {# 数据表格 #}
@@ -86,20 +86,20 @@
             <col class="col--status">
             <col class="col--problem">
             <col class="col--submit-by">
-            <col class="col--time">
-            <col class="col--memory">
-            <col class="col--lang">
+            <col class="col--value">
+            <col class="col--score">
             <col class="col--submit-at">
+            <col class="col--actions">
           </colgroup>
           <thead>
             <tr>
-              <th class="col--status record-status--border">{{ _('Status') }}</th>
-              <th class="col--problem">{{ _('Problem') }}</th>
-              <th class="col--submit-by">{{ _('Submit By') }}</th>
-              <th class="col--time">{{ _('Time') }}</th>
-              <th class="col--memory">{{ _('Memory') }}</th>
-              <th class="col--lang">{{ _('Language') }}</th>
-              <th class="col--submit-at">{{ _('Submit At') }}</th>
+              <th class="col--status record-status--border">审核状态</th>
+              <th class="col--problem">KPI指标</th>
+              <th class="col--submit-by">填报人员</th>
+              <th class="col--value">完成数值</th>
+              <th class="col--score">绩效得分</th>
+              <th class="col--submit-at">填报时间</th>
+              <th class="col--actions">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +117,6 @@
             <a class="pager__item next link" href="?page={{ page + 1 }}{{
               (('&tid=' + filterTid) if filterTid else '')
               + (('&uidOrName=' + filterUidOrName) if filterUidOrName else '')
-              + (('&lang=' + filterLang) if filterLang else '')
               + (('&status=' + filterStatus) if filterStatus else '')
               + (('&pid=' + filterPid) if filterPid else '')
               + ('&all=1' if all else '')
@@ -128,14 +127,13 @@
       {% endif %}
       </div>
     </div>
-    {# 统计信息区域 #}
+    {# 统计信息区域 - 保留原有统计 #}
     {% if statistics %}
     <div class="section">
       <div class="section__header">
         <h1 class="section__title">{{ _('Statistics') }}</h1>
       </div>
       <div class="section__body">
-        {# 5分钟内、1小时内、今天、本周、本月、今年、总计 #}
         <dl class="large horizontal">
           <dt>{{ _('5 Min')}}</dt><dd>{{ statistics['d5min'] }}</dd>
           <dt>{{ _('1 Hour')}}</dt><dd>{{ statistics['d1h'] }}</dd>
@@ -150,4 +148,21 @@
     {% endif %}
   </div>
 </div>
+
+<style>
+/* 绩效记录列表样式优化 */
+.col--value, .col--score {
+  text-align: center;
+}
+
+.col--actions {
+  text-align: center;
+  width: 120px;
+}
+
+/* 审核状态颜色 */
+.status--pending { color: #ffc107; }
+.status--approved { color: #28a745; }
+.status--rejected { color: #dc3545; }
+</style>
 {% endblock %}

@@ -38,9 +38,9 @@ import {
     Handler, param, post, Query, query, route, Types,
 } from '../service/server';
 import { ContestDetailBaseHandler } from './contest';
-
+// 解析分类字符串，支持中英文逗号分隔
 export const parseCategory = (value: string) => value.replace(/，/g, ',').split(',').map((e) => e.trim());
-
+// 构建问题查询条件，根据用户权限过滤隐藏问题
 function buildQuery(udoc: User) {
     const q: Filter<ProblemDoc> = {};
     if (!udoc.hasPerm(PERM.PERM_VIEW_PROBLEM_HIDDEN)) {
@@ -52,7 +52,7 @@ function buildQuery(udoc: User) {
     }
     return q;
 }
-
+// 默认搜索实现
 const defaultSearch = async (domainId: string, q: string, options?: ProblemSearchOptions) => {
     const escaped = escapeRegExp(q.toLowerCase());
     const projection: (keyof ProblemDoc)[] = ['domainId', 'docId', 'pid'];
@@ -74,7 +74,7 @@ const defaultSearch = async (domainId: string, q: string, options?: ProblemSearc
         countRelation: 'eq',
     };
 };
-
+// 查询上下文接口定义
 export interface QueryContext {
     query: Filter<ProblemDoc>;
     sort: string[];
@@ -86,7 +86,7 @@ export interface QueryContext {
     fail: boolean;
     hint: string;
 }
-
+// 问题主页面处理器 - 显示问题列表
 export class ProblemMainHandler extends Handler {
     queryContext: QueryContext = {
         query: {},
@@ -195,6 +195,7 @@ export class ProblemMainHandler extends Handler {
         }
     }
 
+    // 复制问题到其他域
     @param('pids', Types.NumericArray)
     @param('target', Types.String)
     @param('hidden', Types.Boolean)
@@ -233,6 +234,7 @@ export class ProblemMainHandler extends Handler {
         else this.response.body = ids;
     }
 
+    // 删除问题
     @param('pids', Types.NumericArray)
     async postDelete(domainId: string, pids: number[]) {
         let i = 0;
@@ -249,6 +251,7 @@ export class ProblemMainHandler extends Handler {
         this.back();
     }
 
+    // 隐藏问题
     @param('pids', Types.NumericArray)
     async postHide(domainId: string, pids: number[]) {
         for (const pid of pids) {
@@ -262,6 +265,7 @@ export class ProblemMainHandler extends Handler {
         this.back();
     }
 
+    // 取消隐藏问题
     @param('pids', Types.NumericArray)
     async postUnhide(domainId: string, pids: number[]) {
         for (const pid of pids) {
@@ -275,7 +279,7 @@ export class ProblemMainHandler extends Handler {
         this.back();
     }
 }
-
+// 随机问题处理器 - 随机获取一个问题
 export class ProblemRandomHandler extends Handler {
     @param('q', Types.Content, true)
     async get(domainId: string, qs = '') {
@@ -292,6 +296,7 @@ export class ProblemRandomHandler extends Handler {
     }
 }
 
+// 问题详情处理器 - 显示单个问题的详细信息
 export class ProblemDetailHandler extends ContestDetailBaseHandler {
     pdoc: ProblemDoc;
     udoc: User;
@@ -306,7 +311,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
             if (!this.tdoc?.pids?.includes(this.pdoc.docId)) throw new ContestNotFoundError(domainId, tid);
             if (contest.isNotStarted(this.tdoc)) throw new ContestNotLiveError(tid);
             if (!contest.isDone(this.tdoc, this.tsdoc) && (!this.tsdoc?.attend || !this.tsdoc.startAt)) throw new ContestNotAttendedError(tid);
-            // Delete problem-related info in contest mode
+            // // 在比赛模式下删除问题相关信息
             this.pdoc.tag.length = 0;
             delete this.pdoc.nAccept;
             delete this.pdoc.nSubmit;
@@ -379,14 +384,14 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
     @query('tid', Types.ObjectId, true)
     @query('pjax', Types.Boolean)
     async get(...args: any[]) {
-        // Navigate to current additional file download
-        // e.g. ![img](file://a.jpg) will navigate to ![img](./pid/file/a.jpg)
+        // 导航到当前附加文件下载
+        // 例如 ![img](file://a.jpg) 将导航到 ![img](./pid/file/a.jpg)
         if (!this.request.json || args[2]) {
             this.response.body.pdoc.content = this.response.body.pdoc.content
                 .replace(/file:\/\/([^ \n)\\"]+)/g, (str: string) => {
                     const info = str.match(/file:\/\/([^ \n)\\"]+)/);
                     const fileinfo = info[1];
-                    let filename = fileinfo.split('?')[0]; // remove querystring
+                    let filename = fileinfo.split('?')[0]; // 移除查询字符串
                     try {
                         filename = decodeURIComponent(filename);
                     } catch (e) { }
@@ -423,6 +428,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
         }
     }
 
+    // 重新评测问题
     @param('pid', Types.UnsignedInt)
     async postRejudge(domainId: string, pid: number) {
         this.checkPerm(PERM.PERM_REJUDGE_PROBLEM);
@@ -444,6 +450,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
         this.back();
     }
 
+    // 删除问题
     async postDelete() {
         if (!this.user.own(this.pdoc, PERM.PERM_EDIT_PROBLEM_SELF)) this.checkPerm(PERM.PERM_EDIT_PROBLEM);
         const tdocs = await contest.getRelated(this.args.domainId, this.pdoc.docId);
@@ -452,6 +459,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
         this.response.redirect = this.url('problem_main');
     }
 
+    // 收藏/取消收藏问题
     @param('star', Types.Boolean)
     async postStar(domainId: string, star: boolean) {
         await problem.setStar(domainId, this.pdoc.docId, this.user._id, star);
@@ -459,6 +467,7 @@ export class ProblemDetailHandler extends ContestDetailBaseHandler {
     }
 }
 
+// 问题提交处理器 - 处理代码提交
 export class ProblemSubmitHandler extends ProblemDetailHandler {
     @param('tid', Types.ObjectId, true)
     async prepare(domainId: string, tid?: ObjectId) {
@@ -575,6 +584,7 @@ export class ProblemSubmitHandler extends ProblemDetailHandler {
 } // 这里缺少了这个结束大括号
 
 // 添加缺失的 ProblemHackHandler 类
+//  Hack 处理器 - 处理 Hack 提交
 export class ProblemHackHandler extends ProblemDetailHandler {
     rdoc: RecordDoc;
 
@@ -634,12 +644,15 @@ export class ProblemHackHandler extends ProblemDetailHandler {
         this.response.redirect = this.url('record_detail', { rid });
     }
 }
+
+// 问题管理基类处理器
 export class ProblemManageHandler extends ProblemDetailHandler {
     async prepare() {
         if (!this.user.own(this.pdoc, PERM.PERM_EDIT_PROBLEM_SELF)) this.checkPerm(PERM.PERM_EDIT_PROBLEM);
     }
 }
 
+// 问题编辑处理器
 export class ProblemEditHandler extends ProblemManageHandler {
     async get() {
         this.response.body.additional_file = sortFiles(this.pdoc.additional_file || []);
