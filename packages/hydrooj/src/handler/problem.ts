@@ -1107,7 +1107,7 @@ export class ProblemEvidenceDownloadHandler extends Handler {
         // 获取记录文档
         const rdoc = await record.get(domainId, rid);
         if (!rdoc) throw new RecordNotFoundError(domainId, rid);
-        
+
         // 检查权限：只能查看自己的记录或有查看权限
         if (rdoc.uid !== this.user._id) {
             this.checkPerm(PERM.PERM_VIEW_RECORD);
@@ -1125,7 +1125,7 @@ export class ProblemEvidenceDownloadHandler extends Handler {
                 return parts.length > 1 && parts[1] === filename;
             });
             if (found) targetFile = found;
-            else throw new NotFoundError('文件未找到: ' + filename);
+            else throw new NotFoundError(`文件未找到: ${filename}`);
         }
 
         // 提取文件ID和原始文件名
@@ -1140,6 +1140,61 @@ export class ProblemEvidenceDownloadHandler extends Handler {
             false,
             'user'
         );
+    }
+}
+
+
+// 在 problem.ts 文件中添加新的路由处理类
+
+export class RecordReviewHandler extends Handler {
+    rdoc: RecordDoc;
+
+    @param('rid', Types.ObjectId)
+    async prepare(domainId: string, rid: ObjectId) {
+        this.rdoc = await record.get(domainId, rid);
+        if (!this.rdoc) throw new RecordNotFoundError(rid);
+        // 只有管理员或问题所有者可以审核
+        if (!this.user.hasPerm(PERM.PERM_REJUDGE) && this.rdoc.uid !== this.user._id) {
+            throw new PermissionError(PERM.PERM_REJUDGE);
+        }
+    }
+
+    @param('rid', Types.ObjectId)
+    async post(domainId: string, rid: ObjectId) {
+        const { kpiStatus, kpiScore, feedback } = this.request.body;
+
+        // 验证输入
+        if (!['pending', 'approved', 'rejected'].includes(kpiStatus)) {
+            throw new ValidationError('kpiStatus');
+        }
+
+        if (kpiScore && (kpiScore < 0 || kpiScore > 100)) {
+            throw new ValidationError('kpiScore');
+        }
+
+        // 更新记录
+        const $set: any = {
+            kpiStatus,
+            feedback: feedback || '',
+        };
+
+        if (kpiScore) {
+            $set.kpiScore = Number.parseInt(kpiScore);
+        }
+
+        // 如果是审核操作，记录审核时间和审核人
+        if (kpiStatus !== 'pending') {
+            $set.judgeAt = new Date();
+            $set.judger = this.user._id;
+        }
+
+        const updated = await record.update(domainId, rid, $set);
+
+        if (updated) {
+            this.ctx.broadcast('record/change', updated);
+        }
+
+        this.back();
     }
 }
 
@@ -1162,6 +1217,7 @@ export async function apply(ctx: Context) {
     ctx.Route('problem_create', '/problem/create', ProblemCreateHandler, PERM.PERM_CREATE_PROBLEM);
     ctx.Route('record_download_evidence', '/record/:rid/evidence', ProblemEvidenceDownloadHandler);
     ctx.Route('record_download_evidence_file', '/record/:rid/evidence/:filename', ProblemEvidenceDownloadHandler);
+    ctx.Route('record_review', '/record/:rid/review', RecordReviewHandler, PERM.PERM_REJUDGE);
     await ctx.inject(['api'], ({ api }) => {
         api.provide(ProblemApi);
     });

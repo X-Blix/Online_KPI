@@ -216,6 +216,57 @@
         </div>
       </div>
     {% endif %}
+
+
+
+
+{# 在 record_detail.html 的右栏侧边栏中添加 #}
+
+{# 管理员审核区域 #}
+{% if handler.user.hasPerm(perm.PERM_REJUDGE) or handler.user._id == pdoc.owner %}
+<div class="section side">
+  <div class="section__header">
+    <h1 class="section__title">📝 绩效审核</h1>
+  </div>
+  <div class="section__body">
+    <form method="post" action="{{ url('record_review', rid=rdoc._id) }}">
+      <input type="hidden" name="csrfToken" value="{{ handler.csrfToken }}">
+      
+      <div class="form__item">
+        <label class="form__label">审核结果</label>
+        <select name="kpiStatus" class="select" style="width: 100%;">
+          <option value="pending" {% if rdoc.kpiStatus == 'pending' %}selected{% endif %}>⏳ 待审核</option>
+          <option value="approved" {% if rdoc.kpiStatus == 'approved' %}selected{% endif %}>✅ 审核通过</option>
+          <option value="rejected" {% if rdoc.kpiStatus == 'rejected' %}selected{% endif %}>❌ 审核拒绝</option>
+        </select>
+      </div>
+      
+      <div class="form__item">
+        <label class="form__label">绩效得分</label>
+        <input type="number" name="kpiScore" class="textbox" 
+               min="0" max="100" step="1" 
+               value="{{ rdoc.kpiScore|default('') }}" 
+               placeholder="0-100分">
+      </div>
+      
+      <div class="form__item">
+        <label class="form__label">审核反馈</label>
+        <textarea name="feedback" class="textbox" 
+                  rows="4" placeholder="请输入审核意见或改进建议...">{{ rdoc.feedback|default('') }}</textarea>
+      </div>
+      
+      <div class="form__item">
+        <button type="submit" class="primary rounded button" style="width: 100%;">
+          💾 提交审核
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+
+
   </div>
 </div>
 
